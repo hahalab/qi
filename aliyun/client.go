@@ -149,17 +149,17 @@ func (client *Client) CreateService(service Service) error {
 	return nil
 }
 
-func (client *Client) DeleteFunction(serviceName string, functionName string) error {
-	return client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName))
-}
-
 func (client *Client) CreateFunction(serviceName string, function Function) error {
 	_, err := client.Get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
 	if err == nil {
-		err = client.DeleteFunction(serviceName, function.FunctionName)
+		err = client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
 		if err != nil {
+			fmt.Println("Delete Func", err)
 			return err
 		}
+		fmt.Println("DELETE FUNC SUCCESS!", serviceName, function.FunctionName)
+	} else {
+		fmt.Println("Not GET Func", err)
 	}
 
 	reqBody, err := json.Marshal(function)
