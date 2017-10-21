@@ -1,5 +1,7 @@
 package aliyun
 
+var reg string = `/\/\[(\w+)\]\/user\/\[(\w+)\]\/\[(\w+)\]/`
+
 type createApiGateWayReq struct {
 	//bcc88ca511be4ad49f568268d67c1c00
 	GroupId string
