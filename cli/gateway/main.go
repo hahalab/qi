@@ -17,9 +17,9 @@ func main() {
 		AccessKeyID:     os.Getenv("ALI_ACCESS_KEY"),
 		AccessKeySecret: os.Getenv("ALI_ACCESS_SECRET"),
 		AccountID:       os.Getenv("ALI_ACCOUNT_ID"),
-		FcEndPoint:      os.Getenv("FC_ENDPOINT"),
-		OssEndPoint:     os.Getenv("OSS_ENDPOINT"),
-		OssBucketName:   os.Getenv("OSS_BUCKETNAME"),
+		FcEndPoint:      os.Getenv("ALI_FC_ENDPOINT"),
+		OssEndPoint:     os.Getenv("ALI_OSS_ENDPOINT"),
+		OssBucketName:   os.Getenv("ALI_OSS_BUCKET_NAME"),
 	}
 	err := validator.New().Struct(conf)
 	if err != nil {
