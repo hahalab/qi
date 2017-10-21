@@ -3,7 +3,7 @@
 // code.zip
 // DO NOT EDIT!
 
-package main
+package archive
 
 import (
 	"bytes"
