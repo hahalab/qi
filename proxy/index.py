@@ -33,9 +33,13 @@ def handler(event, context):
 
     wait_for_listen(port)
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
+    p.terminate()
     # logger.info(p.stdout)
     # logger.error(p.stderr)
-    return dict(headers=response.headers, data=response.content, code=response.status_code)
+    headers = response.headers
+    for k, v in headers:
+        headers[k] = v.split(';')
+    return dict(headers=headers, data=response.content, code=response.status_code)
 
 
 def wait_for_listen(port):
