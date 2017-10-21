@@ -5,6 +5,7 @@
 
 .idea
 build
+archive/code.zip
 
 # User-specific stuff:
 .idea/**/workspace.xml

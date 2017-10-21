@@ -15,15 +15,23 @@ func main() {
 	app.Version = version
 	app.Usage = "build and deploy any time any where"
 	app.Action = initServer
-	app.Flags = conf.Flags
-	//app.Before = conf.MustParseConfig
+	app.Flags = conf.BuildFlags
 	app.Commands = []cli.Command{
 		{
 			Name:     "build",
-			Usage:    "start server",
-			Flags:    conf.Flags,
+			Usage:    "start build and deploy to serverless PaaS",
+			Flags:    conf.BuildFlags,
+			Before:   conf.MustParseConfig,
 			Action:   initServer,
 			Category: "BUILD",
+		},
+		{
+			Name:     "gateway",
+			Usage:    "start gateway",
+			Flags:    conf.GatewayFlags,
+			Before:   conf.MustParseConfig,
+			Action:   gatewayInit,
+			Category: "GATEWAY",
 		},
 	}
 
@@ -34,8 +42,3 @@ func main() {
 }
 
 var version string
-
-func initServer(c *cli.Context) error {
-	fmt.Println(c.String(conf.FlagConfigFile))
-	return nil
-}
