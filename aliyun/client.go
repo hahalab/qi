@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
@@ -17,6 +18,7 @@ type Client struct {
 	conn   *http.Client
 	config *Config
 	ossCli *oss.Client
+	logCli *sls.Client
 }
 
 func NewClient(config *Config) (*Client, error) {
@@ -43,10 +45,13 @@ func NewClient(config *Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	logCli := &sls.Client{Endpoint: config.LogEndPoint, AccessKeyID: config.AccessKeyID, AccessKeySecret: config.AccessKeySecret}
+
 	return &Client{
 		conn:   &cli,
 		config: config,
 		ossCli: ossCli,
+		logCli: logCli,
 	}, nil
 }
 
@@ -124,7 +129,7 @@ func (client *Client) CreateFunction(serviceName string, function Function) erro
 }
 
 func (client *Client) InvokeFunction(serviceName string, functionName string, event []byte) ([]byte, error) {
-	content, err := client.Post(fmt.Sprintf("/services/%s/functions/%s/invocations", serviceName, functionName), event)
+	content, err := client.Post(fmt.Sprintf("/2016-08-15/services/%s/functions/%s/invocations", serviceName, functionName), event)
 	if err != nil {
 		return nil, err
 	}
@@ -150,4 +155,16 @@ func (client *Client) GetObject(objectKey string) (io.ReadCloser, error) {
 		return nil, err
 	}
 	return bucket.GetObject(objectKey)
+}
+
+func (client *Client) CreateLogStore(ProjectName string, StoreName string) error {
+	p, err := client.logCli.CreateProject(ProjectName, "ha log for function compute")
+	if err != nil {
+		return err
+	}
+	err = p.CreateLogStore(StoreName, 30, 1)
+	if err != nil {
+		return err
+	}
+	return nil
 }

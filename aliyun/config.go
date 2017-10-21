@@ -9,4 +9,6 @@ type Config struct {
 	//oss-cn-beijing.aliyuncs.com
 	OssEndPoint   string `validate:"required"`
 	OssBucketName string `validate:"required"`
+	//cn-beijing.log.aliyuncs.com
+	LogEndPoint string `validate:"required"`
 }
