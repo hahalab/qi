@@ -1,29 +1,48 @@
 package aliyun
 
 import (
-	"fmt"
+	"os"
 	"testing"
 )
 
-func Test_CreateService(t *testing.T) {
+func newCli() *Client {
+	aks := os.Getenv("AccessKeySecret")
+	accoundId := os.Getenv("AccountID")
 	cli, err := NewClient(&Config{
 		AccessKeyID:     "LTAIII8mgWu95PjV",
-		AccessKeySecret: "xxxxxxxxxxxxxxx",
+		AccessKeySecret: aks,
 		FcEndPoint:      "cn-beijing.fc.aliyuncs.com",
-		AccountID:       "xxxxxxxxxxxxxxx",
-		OssBucketName:   "oss-cn-beijing.aliyuncs.com",
+		AccountID:       accoundId,
+		OssBucketName:   "this-test",
+		OssEndPoint:     "oss-cn-beijing.aliyuncs.com",
+		LogEndPoint:     "cn-beijing.log.aliyuncs.com",
 	})
 	if err != nil {
-		t.Error(err)
+		panic(err)
 	}
+	return cli
+}
 
-	fmt.Println(cli.CreateService(Service{
+func Test_CreateService(t *testing.T) {
+	cli := newCli()
+	err := cli.CreateService(Service{
 		Description: "testapi",
 		Role:        "acs:ram::1759916402662922:role/fc-logs",
 		ServiceName: "theapitest",
 		LogConfig: LogConfig{
 			Logstore: "fc-store",
-			Project:  "store",
+			Project:  "fc-store-test-it",
 		},
-	}))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_CreateLog(t *testing.T) {
+	cli := newCli()
+	err := cli.CreateLogStore("fc-store-test-it", "fc-store")
+	if err != nil {
+		t.Fatal(err)
+	}
 }
