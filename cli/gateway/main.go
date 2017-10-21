@@ -6,27 +6,39 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/todaychiji/ha/aliyun"
 	"github.com/todaychiji/ha/gateway"
 )
 
 func main() {
+	if os.Getenv("DEBUG") != "" {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
 	conf := &aliyun.Config{
 		AccessKeyID:     os.Getenv("ALI_ACCESS_KEY"),
 		AccessKeySecret: os.Getenv("ALI_ACCESS_SECRET"),
 		AccountID:       os.Getenv("ALI_ACCOUNT_ID"),
-		FcDomain:        os.Getenv("FC_DOMAIN"),
-		OssEndPoint:     os.Getenv("OSS_ENDPOINT"),
-		OssBucketName:   os.Getenv("OSS_BUCKETNAME"),
+		FcEndPoint:      os.Getenv("ALI_FC_ENDPOINT"),
+		OssEndPoint:     os.Getenv("ALI_OSS_ENDPOINT"),
+		OssBucketName:   os.Getenv("ALI_OSS_BUCKET_NAME"),
 	}
-	ok, err := govalidator.ValidateStruct(conf)
-	if !ok || err != nil {
+	err := validator.New().Struct(conf)
+	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	aliClient := aliyun.NewClient(conf)
-	mux := gateway.NewMux(aliClient)
+	aliClient, err := aliyun.NewClient(conf)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	confPath := os.Getenv("ROUTER_PATH")
+	if confPath == "" {
+		confPath = "router.conf"
+	}
+	mux := gateway.NewMux(aliClient, confPath)
 
 	govalidator.ValidateStruct(conf)
 
