@@ -129,6 +129,10 @@ func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
 }
 
 func (client *Client) CreateService(service Service) error {
+	_, err := client.Get(fmt.Sprintf("/2016-08-15/services/%s", service.ServiceName))
+	if err == nil {
+		return nil
+	}
 	reqBody, err := json.Marshal(service)
 	if err != nil {
 		return err
@@ -209,6 +213,5 @@ func (client *Client) CreateLogStore(ProjectName string, StoreName string) error
 			return err
 		}
 	}
-
 	return nil
 }
