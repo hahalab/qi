@@ -79,6 +79,30 @@ func (client *Client) Get(path string) ([]byte, error) {
 	return content, nil
 }
 
+func (client *Client) Delete(path string) error {
+	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	req, err := http.NewRequest("DELETE", host+path, nil)
+	if err != nil {
+		return err
+	}
+	date := time.Now().UTC().Format(http.TimeFormat)
+	req.Header.Set(HTTPHeaderDate, date)
+	client.signHeader(req, path)
+	resp, err := client.conn.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("resp status not 200,content:%s", string(content))
+	}
+	return nil
+}
+
 func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
 	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("POST", host+path, bytes.NewReader(reqBody))
@@ -114,6 +138,10 @@ func (client *Client) CreateService(service Service) error {
 		return err
 	}
 	return nil
+}
+
+func (client *Client) DeleteFunction(serviceName string, functionName string) error {
+	return client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName)
 }
 
 func (client *Client) CreateFunction(serviceName string, function Function) error {
@@ -158,13 +186,29 @@ func (client *Client) GetObject(objectKey string) (io.ReadCloser, error) {
 }
 
 func (client *Client) CreateLogStore(ProjectName string, StoreName string) error {
-	p, err := client.logCli.CreateProject(ProjectName, "ha log for function compute")
+	isExsist, err := client.logCli.CheckProjectExist(ProjectName)
 	if err != nil {
 		return err
 	}
-	err = p.CreateLogStore(StoreName, 30, 1)
+	var p *sls.LogProject
+	if isExsist {
+		p, err = client.logCli.GetProject(ProjectName)
+	} else {
+		p, err = client.logCli.CreateProject(ProjectName, "ha log for function compute")
+	}
 	if err != nil {
 		return err
 	}
+	logExsist, err := p.CheckLogstoreExist(StoreName)
+	if err != nil {
+		return err
+	}
+	if !logExsist {
+		err = p.CreateLogStore(StoreName, 30, 1)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
