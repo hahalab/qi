@@ -6,11 +6,16 @@ const (
 	FlagConfigFile = `config`
 )
 
-var Flags = []cli.Flag{
-	cli.StringFlag{
-		Name:   FlagConfigFile + ",c",
-		Value:  "./up.conf",
-		Usage:  "specific a config file `PATH`",
-		EnvVar: "CONFIG_PATH",
-	},
+var BuildFlags = []cli.Flag{
+	fileFlag,
+}
+
+var GatewayFlags = []cli.Flag{
+	fileFlag,
+}
+
+var fileFlag = cli.StringFlag{
+	Name:   FlagConfigFile + ",c",
+	Usage:  "specific a config file `PATH`",
+	EnvVar: "CONFIG_PATH",
 }

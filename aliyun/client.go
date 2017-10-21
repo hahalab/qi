@@ -141,7 +141,7 @@ func (client *Client) CreateService(service Service) error {
 }
 
 func (client *Client) DeleteFunction(serviceName string, functionName string) error {
-	return client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName)
+	return client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName))
 }
 
 func (client *Client) CreateFunction(serviceName string, function Function) error {
