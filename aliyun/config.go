@@ -9,4 +9,6 @@ type Config struct {
 	//oss-cn-beijing.aliyuncs.com
 	OssEndPoint   string
 	OssBucketName string
+	//cn-beijing.log.aliyuncs.com
+	LogEndPoint string
 }

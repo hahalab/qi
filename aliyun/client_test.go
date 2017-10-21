@@ -11,6 +11,7 @@ func Test_CreateService(t *testing.T) {
 		AccessKeySecret: "xxxxxxxxxxxxxxx",
 		FcEndPoint:      "cn-beijing.fc.aliyuncs.com",
 		AccountID:       "xxxxxxxxxxxxxxx",
+		OssBucketName:   "oss-cn-beijing.aliyuncs.com",
 	})
 	fmt.Println(cli.CreateService(Service{
 		Description: "testapi",
