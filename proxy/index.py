@@ -1,24 +1,25 @@
 import logging
 import os
+import requests
 import shlex
 import socket
 import subprocess
-import requests
-import urlparse
 import time
-import yaml
+import urlparse
 
 
 def handler(event, context):
     logger = logging.getLogger()
     config = read_config()
     port = pick_port()
-    p = start_command(config.command, port)
+    p = start_command(config["command"], port)
 
-    headers = event.headers
-    method = event.method
-    data = event.data
-    path = event.path
+    logger.info("receive event: {} context: {}".format(event, context))
+
+    headers = event["headers"]
+    method = event["method"]
+    data = event["data"]
+    path = event["path"]
 
     logger.info(p.stdout)
     logger.error(p.stderr)
@@ -33,12 +34,18 @@ def wait_for_listen(port):
 
 
 def read_config():
-    return yaml.load(file('ha.yml', 'r'))
+    with open('ha.yml', 'r') as f:
+        config = dict()
+        for l in f.readlines():
+            key, v = l.split(':')
+            config[key] = v.strip()
+        print "read config :", config
+        return config
 
 
 def start_command(cmd, port):
     my_env = os.environ.copy()
-    my_env["PORT"] = port
+    my_env["PORT"] = str(port)
     args = shlex.split('sh -c "{}"'.format(cmd))
     return subprocess.Popen(args, env=my_env)
 
