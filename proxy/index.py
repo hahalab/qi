@@ -35,7 +35,7 @@ def handler(event, context):
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
     # logger.info(p.stdout)
     # logger.error(p.stderr)
-    return dict(headers=response.headers, data=response.content, code=response.code)
+    return dict(headers=response.headers, data=response.content, code=response.status_code)
 
 
 def wait_for_listen(port):
