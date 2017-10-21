@@ -16,7 +16,7 @@ func main() {
 		AccessKeyID:     os.Getenv("ALI_ACCESS_KEY"),
 		AccessKeySecret: os.Getenv("ALI_ACCESS_SECRET"),
 		AccountID:       os.Getenv("ALI_ACCOUNT_ID"),
-		FcDomain:        os.Getenv("FC_DOMAIN"),
+		FcEndPoint:      os.Getenv("FC_ENDPOINT"),
 		OssEndPoint:     os.Getenv("OSS_ENDPOINT"),
 		OssBucketName:   os.Getenv("OSS_BUCKETNAME"),
 	}
@@ -25,7 +25,10 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	aliClient := aliyun.NewClient(conf)
+	aliClient, err := aliyun.NewClient(conf)
+	if err != nil {
+		logrus.Fatal(err)
+	}
 	mux := gateway.NewMux(aliClient)
 
 	govalidator.ValidateStruct(conf)
