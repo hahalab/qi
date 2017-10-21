@@ -6,6 +6,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/todaychiji/ha/aliyun"
 	"github.com/todaychiji/ha/gateway"
@@ -20,8 +21,8 @@ func main() {
 		OssEndPoint:     os.Getenv("OSS_ENDPOINT"),
 		OssBucketName:   os.Getenv("OSS_BUCKETNAME"),
 	}
-	ok, err := govalidator.ValidateStruct(conf)
-	if !ok || err != nil {
+	err := validator.New().Struct(conf)
+	if err != nil {
 		logrus.Fatal(err)
 	}
 

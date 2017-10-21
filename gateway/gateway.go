@@ -28,7 +28,7 @@ type mux struct {
 }
 
 func NewMux(driver driver) http.HandlerFunc {
-	return http.HandlerFunc(mux{driver: driver})
+	return http.HandlerFunc(mux{driver: driver}.Dispatch)
 }
 
 type Lambda struct {
