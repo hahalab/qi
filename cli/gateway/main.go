@@ -24,6 +24,7 @@ func main() {
 		FcEndPoint:      os.Getenv("ALI_FC_ENDPOINT"),
 		OssEndPoint:     os.Getenv("ALI_OSS_ENDPOINT"),
 		OssBucketName:   os.Getenv("ALI_OSS_BUCKET_NAME"),
+		LogEndPoint:     os.Getenv("ALI_LOG_ENDPOINT"),
 	}
 	err := validator.New().Struct(conf)
 	if err != nil {

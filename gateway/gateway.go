@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"sort"
@@ -54,11 +55,21 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(400)
+		logrus.Debugf("read buff from req body err:%v", err)
+		return
+	}
+
 	body, _ := json.Marshal(Event{
 		Method:  r.Method,
 		Headers: r.Header,
 		Path:    r.RequestURI,
+		Data:    reqBody,
 	})
+
+	logrus.Debugf("req body %s", body)
 	respBody, err := m.InvokeFunction(lambda.Service, lambda.Name, body)
 	if err != nil {
 		w.WriteHeader(500)
@@ -70,6 +81,7 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(respBody, &resp)
 	if err != nil {
 		w.WriteHeader(502)
+		logrus.Infof("%s", respBody)
 		logrus.Errorf("unmarshal resp from function failed: %v", err)
 		return
 	}
@@ -140,14 +152,14 @@ func (r rawRouterConf) Swap(i, j int) {
 }
 
 type Event struct {
-	Method  string
-	Path    string
-	Headers map[string][]string
-	Data    []byte
+	Method  string              `json:"method"`
+	Path    string              `json:"path"`
+	Headers map[string][]string `json:"headers"`
+	Data    []byte              `json:"data"`
 }
 
 type Resp struct {
-	Code    int
-	Headers map[string][]string
-	Data    []byte
+	Code    int                 `json:"code"`
+	Headers map[string][]string `json:"headers"`
+	Data    []byte              `json:"data"`
 }
