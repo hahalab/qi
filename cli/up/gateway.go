@@ -14,7 +14,7 @@ import (
 )
 
 func gatewayInit(c *cli.Context) {
-	conf := conf.GetConf()
+	conf := conf.GetGWConf()
 
 	err := validator.New().Struct(conf)
 	if err != nil {

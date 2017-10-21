@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"github.com/todaychiji/ha/conf"
@@ -14,22 +15,31 @@ func main() {
 	app.Name = "up"
 	app.Version = version
 	app.Usage = "build and deploy any time any where"
-	app.Action = initServer
+	app.Before = func(context *cli.Context) error {
+		logrus.SetOutput(os.Stdout)
+		return nil
+	}
+	app.Action = up
 	app.Flags = conf.BuildFlags
 	app.Commands = []cli.Command{
 		{
 			Name:     "build",
-			Usage:    "start build and deploy to serverless PaaS",
+			Usage:    "only build code to zip package",
 			Flags:    conf.BuildFlags,
-			Before:   conf.MustParseConfig,
-			Action:   initServer,
+			Action:   onlyBuild,
 			Category: "BUILD",
-		},
-		{
+		}, {
+			Name:     "deploy",
+			Usage:    "only create/update function",
+			Flags:    conf.BuildFlags,
+			Before:   conf.MustParseUpConfig,
+			Action:   onlyDeploy,
+			Category: "BUILD",
+		}, {
 			Name:     "gateway",
 			Usage:    "start gateway",
 			Flags:    conf.GatewayFlags,
-			Before:   conf.MustParseConfig,
+			Before:   conf.MustParseGWConfig,
 			Action:   gatewayInit,
 			Category: "GATEWAY",
 		},

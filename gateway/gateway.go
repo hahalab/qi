@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
-	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/todaychiji/ha/conf"
 )
 
 type oss interface {
@@ -35,10 +35,9 @@ func NewMux(driver driver, confPath string) http.HandlerFunc {
 }
 
 type Lambda struct {
-	PathRegexp *regexp.Regexp
-	Path       string
-	Name       string
-	Service    string
+	Path    string
+	Name    string
+	Service string
 }
 
 func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +50,7 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 
 	if lambda == nil {
 		w.WriteHeader(404)
-		logrus.Error("lambda not found")
+		logrus.Infof("[%s]%s lambda not found", r.Method, r.RequestURI)
 		return
 	}
 
@@ -62,14 +61,16 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logrus.Debugf("get request: path(%s), found lambda prefix(%s)", r.RequestURI, lambda.Path)
+
 	body, _ := json.Marshal(Event{
 		Method:  r.Method,
 		Headers: r.Header,
-		Path:    r.RequestURI,
+		Path:    r.RequestURI[len(lambda.Path):] + "/",
 		Data:    reqBody,
 	})
 
-	logrus.Debugf("req body %s", body)
+	logrus.Debugf("req body %s, lambda: %v", body, lambda)
 	respBody, err := m.InvokeFunction(lambda.Service, lambda.Name, body)
 	if err != nil {
 		w.WriteHeader(500)
@@ -101,8 +102,7 @@ func (m mux) findLambda(url string) (*Lambda, error) {
 		return nil, err
 	}
 
-	var conf rawRouterConf
-
+	var conf conf.RawRouterConf
 	err = json.NewDecoder(c).Decode(&conf)
 	if err != nil {
 		return nil, err
@@ -111,44 +111,22 @@ func (m mux) findLambda(url string) (*Lambda, error) {
 
 	sort.Sort(conf)
 
-	logrus.Debug(conf)
+	logrus.Debug("get router conf from oss success")
+	for _, v := range conf {
+		logrus.Debugf("prefix: %s, service name: %s, func name: %s", v.Prefix, v.Service, v.Function)
+	}
 
 	for _, v := range conf {
-		l := &Lambda{
-			PathRegexp: regexp.MustCompile(strings.Replace(v.URL, "?", "[^/]", -1)),
-			Path:       v.URL,
-			Name:       v.Name,
-			Service:    v.Service,
-		}
-
-		if l.PathRegexp.MatchString(url) {
-			return l, nil
+		if v.Prefix != "" && regexp.MustCompile("^"+v.Prefix).MatchString(url) {
+			return &Lambda{
+				Path:    v.Prefix,
+				Name:    v.Function,
+				Service: v.Service,
+			}, nil
 		}
 	}
 
 	return nil, nil
-}
-
-type rawRouterConf []rawRouterLine
-type rawRouterLine struct {
-	URL     string `json:"url"`
-	Name    string `json:"name"`
-	Service string `json:"service"`
-}
-
-func (r rawRouterConf) Len() int {
-	return len(r)
-}
-
-func (r rawRouterConf) Less(i, j int) bool {
-	lenOfI := len(strings.SplitN(r[i].URL, "/", -1))
-	lenOfJ := len(strings.SplitN(r[j].URL, "/", -1))
-
-	return lenOfI < lenOfJ
-}
-
-func (r rawRouterConf) Swap(i, j int) {
-	r[i], r[j] = r[j], r[i]
 }
 
 type Event struct {

@@ -2,22 +2,26 @@ package archive
 
 import (
 	"archive/zip"
-	"path/filepath"
+	"bytes"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"fmt"
-	"strings"
-	"io"
-	"github.com/todaychiji/ha/config"
 	"path"
-	"bytes"
+	"path/filepath"
+	"strings"
+
+	"github.com/todaychiji/ha/conf"
 )
 
 // 把目录打包成 cwd()/code.zip
 func Build(dir string) error {
-	c := config.LoadConfig(path.Join(dir, "ha.yml"))
+	c, err := conf.LoadConfig(path.Join(dir, "ha.yml"))
+	if err != nil || c == nil {
+		return err
+	}
 
-	if err := executeBuild(dir, c); err != nil {
+	if err := executeBuild(dir, *c); err != nil {
 		return err
 	}
 
@@ -99,7 +103,7 @@ func injectDir(dir string, tw *zip.Writer) error {
 		if len(zipPath) > 1 {
 			zipPath = zipPath[1:]
 		}
-		fmt.Printf("Add file %s to %s\n", path, zipPath)
+		fmt.Printf("Add file %s to %s %v\n", path, zipPath, info)
 		header, err := zip.FileInfoHeader(info)
 
 		header.Name = zipPath
@@ -140,7 +144,7 @@ func injectDir(dir string, tw *zip.Writer) error {
 	return err
 }
 
-func executeBuild(dir string, c config.Config) error {
+func executeBuild(dir string, c conf.CodeConfig) error {
 
 	if c.Build == "" {
 		return nil
@@ -156,10 +160,11 @@ func executeBuild(dir string, c config.Config) error {
 	}
 
 	cmd := exec.Command("sh", "-c", c.Build)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+
+	out := []byte{}
+	cmd.Stdout = bytes.NewBuffer(out)
 	err = cmd.Run()
-	fmt.Printf("Build result: %q\n", out.String())
+	fmt.Printf("Build result: %s\n", out)
 	if err != nil {
 		return err
 	}

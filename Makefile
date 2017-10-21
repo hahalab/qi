@@ -1,5 +1,5 @@
 export VERSION=`git describe --abbrev=6 --dirty --always --tags`
-export GOBIN=$(PWD)/build
+export GOBIN=$(PWD)/bin
 export CGO_ENABLED?=1
 export installsuffix=cgo
 #export GOFLAGS=-w -s
@@ -11,12 +11,12 @@ build: $(shell find . -name '*.go') .git
 
 .PHONY: run
 run: build
-	./build/up --version
+	./bin/up --version
 
 
 .PHONY: server
 server: build
-	./build/up gateway
+	./bin/up gateway
 
 .PHONY: test
 test:

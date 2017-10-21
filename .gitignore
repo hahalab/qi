@@ -4,8 +4,9 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 .idea
-build
-archive/code.zip
+bin
+*/code.zip
+cli/demo/demo
 
 # User-specific stuff:
 .idea/**/workspace.xml
