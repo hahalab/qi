@@ -9,15 +9,25 @@ import (
 )
 
 type oss interface {
-	GetFile(path string) ([]byte, error)
+	GetObject(path string) ([]byte, error)
 }
 
 type lambda interface {
-	InvokeLambda(service, name string, event Event) (Resp, error)
+	InvokeFunction(service, name string, event []byte) ([]byte, error)
 }
 
-var o oss
-var l lambda
+type driver interface {
+	oss
+	lambda
+}
+
+type mux struct {
+	driver
+}
+
+func NewMux(driver driver) http.HandlerFunc {
+	return http.HandlerFunc(mux{driver})
+}
 
 type Lambda struct {
 	PathRegexp *regexp.Regexp
@@ -26,8 +36,8 @@ type Lambda struct {
 	Service    string
 }
 
-func Dispatch(w http.ResponseWriter, r *http.Request) {
-	lambda, err := findLambda(r.RequestURI)
+func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
+	lambda, err := m.findLambda(r.RequestURI)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte("router compile failed"))
@@ -40,22 +50,37 @@ func Dispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := l.InvokeLambda(lambda.Service, lambda.Name, Event{})
+	body, _ := json.Marshal(Event{
+		Method:  r.Method,
+		Headers: r.Header,
+		Path:    r.RequestURI,
+	})
+	respBody, err := m.InvokeFunction(lambda.Service, lambda.Name, body)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
+	resp := Resp{}
+	err = json.Unmarshal(respBody, &resp)
+	if lambda == nil {
+		w.WriteHeader(502)
+		w.Write([]byte("unmarshal resp from function failed"))
+		return
+	}
+
 	w.WriteHeader(resp.Code)
 	for k, v := range resp.Headers {
-		w.Header().Set(k, v)
+		for _, h := range v {
+			w.Header().Set(k, h)
+		}
 	}
 	w.Write(resp.Data)
 }
 
-func findLambda(url string) (*Lambda, error) {
-	c, err := o.GetFile("router.conf")
+func (m mux) findLambda(url string) (*Lambda, error) {
+	c, err := m.GetObject("router.conf")
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +135,12 @@ func (r rawRouterConf) Swap(i, j int) {
 type Event struct {
 	Method  string
 	Path    string
-	Headers map[string]string
+	Headers map[string][]string
 	Data    []byte
 }
 
 type Resp struct {
 	Code    int
-	Headers map[string]string
+	Headers map[string][]string
 	Data    []byte
 }
