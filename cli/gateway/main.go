@@ -6,6 +6,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/sirupsen/logrus"
+
 	"github.com/todaychiji/ha/aliyun"
 	"github.com/todaychiji/ha/gateway"
 )
@@ -15,7 +16,9 @@ func main() {
 		AccessKeyID:     os.Getenv("ALI_ACCESS_KEY"),
 		AccessKeySecret: os.Getenv("ALI_ACCESS_SECRET"),
 		AccountID:       os.Getenv("ALI_ACCOUNT_ID"),
-		Domain:          os.Getenv("ALI_DOMAIN"),
+		FcDomain:        os.Getenv("FC_DOMAIN"),
+		OssEndPoint:     os.Getenv("OSS_ENDPOINT"),
+		OssBucketName:   os.Getenv("OSS_BUCKETNAME"),
 	}
 	ok, err := govalidator.ValidateStruct(conf)
 	if !ok || err != nil {

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"regexp"
 	"sort"
@@ -9,7 +10,7 @@ import (
 )
 
 type oss interface {
-	GetObject(path string) ([]byte, error)
+	GetObject(path string) (io.ReadCloser, error)
 }
 
 type lambda interface {
@@ -22,11 +23,12 @@ type driver interface {
 }
 
 type mux struct {
+	path string
 	driver
 }
 
 func NewMux(driver driver) http.HandlerFunc {
-	return http.HandlerFunc(mux{driver})
+	return http.HandlerFunc(mux{driver: driver})
 }
 
 type Lambda struct {
@@ -80,17 +82,18 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m mux) findLambda(url string) (*Lambda, error) {
-	c, err := m.GetObject("router.conf")
+	c, err := m.GetObject(m.path)
 	if err != nil {
 		return nil, err
 	}
 
 	var conf rawRouterConf
 
-	err = json.Unmarshal(c, &conf)
+	err = json.NewDecoder(c).Decode(&conf)
 	if err != nil {
 		return nil, err
 	}
+	defer c.Close()
 
 	sort.Sort(conf)
 
