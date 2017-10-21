@@ -12,13 +12,15 @@ import (
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/denverdino/aliyungo/common"
 )
 
 type Client struct {
-	conn   *http.Client
-	config *Config
-	ossCli *oss.Client
-	logCli *sls.Client
+	conn      *http.Client
+	config    *Config
+	ossCli    *oss.Client
+	logCli    *sls.Client
+	commonCli *common.Client
 }
 
 func NewClient(config *Config) (*Client, error) {
@@ -46,6 +48,9 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, err
 	}
 	logCli := &sls.Client{Endpoint: config.LogEndPoint, AccessKeyID: config.AccessKeyID, AccessKeySecret: config.AccessKeySecret}
+
+	commonCli := &common.Client{}
+	commonCli.Init("http://"+config.ApiEndPoint, "2016-07-14", config.AccessKeyID, config.AccessKeySecret)
 
 	return &Client{
 		conn:   &cli,
@@ -149,6 +154,11 @@ func (client *Client) DeleteFunction(serviceName string, functionName string) er
 }
 
 func (client *Client) CreateFunction(serviceName string, function Function) error {
+	_, err := client.Get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
+	if err == nil {
+		return nil
+	}
+
 	reqBody, err := json.Marshal(function)
 	if err != nil {
 		return err
