@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type oss interface {
@@ -27,8 +29,8 @@ type mux struct {
 	driver
 }
 
-func NewMux(driver driver) http.HandlerFunc {
-	return http.HandlerFunc(mux{driver: driver}.Dispatch)
+func NewMux(driver driver, confPath string) http.HandlerFunc {
+	return http.HandlerFunc(mux{driver: driver, path: confPath}.Dispatch)
 }
 
 type Lambda struct {
@@ -42,13 +44,13 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 	lambda, err := m.findLambda(r.RequestURI)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte("router compile failed"))
+		logrus.Error("router compile failed")
 		return
 	}
 
 	if lambda == nil {
 		w.WriteHeader(404)
-		w.Write([]byte("lambda not found"))
+		logrus.Error("lambda not found")
 		return
 	}
 
@@ -60,15 +62,15 @@ func (m mux) Dispatch(w http.ResponseWriter, r *http.Request) {
 	respBody, err := m.InvokeFunction(lambda.Service, lambda.Name, body)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+		logrus.Error(err)
 		return
 	}
 
 	resp := Resp{}
 	err = json.Unmarshal(respBody, &resp)
-	if lambda == nil {
+	if err != nil {
 		w.WriteHeader(502)
-		w.Write([]byte("unmarshal resp from function failed"))
+		logrus.Errorf("unmarshal resp from function failed: %v", err)
 		return
 	}
 
@@ -96,6 +98,8 @@ func (m mux) findLambda(url string) (*Lambda, error) {
 	defer c.Close()
 
 	sort.Sort(conf)
+
+	logrus.Debug(conf)
 
 	for _, v := range conf {
 		l := &Lambda{

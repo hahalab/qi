@@ -13,6 +13,10 @@ import (
 )
 
 func main() {
+	if os.Getenv("DEBUG") != "" {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
 	conf := &aliyun.Config{
 		AccessKeyID:     os.Getenv("ALI_ACCESS_KEY"),
 		AccessKeySecret: os.Getenv("ALI_ACCESS_SECRET"),
@@ -30,7 +34,11 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	mux := gateway.NewMux(aliClient)
+	confPath := os.Getenv("ROUTER_PATH")
+	if confPath == "" {
+		confPath = "router.conf"
+	}
+	mux := gateway.NewMux(aliClient, confPath)
 
 	govalidator.ValidateStruct(conf)
 
