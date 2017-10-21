@@ -30,8 +30,8 @@ def handler(event, context):
     event["headers"] = headers
 
     method = event["method"]
-    data = getattr(event, "data", None)
-    path = getattr(event, "path", "/")
+    data = event.get("data", None)
+    path = event.get("path", "/")
 
     wait_for_listen(port)
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
@@ -68,7 +68,7 @@ def start_command(cmd, port):
     my_env = os.environ.copy()
     my_env["PORT"] = str(port)
     args = shlex.split(cmd)
-    return subprocess.Popen(args, env=my_env)
+    return subprocess.Popen(args, env=my_env, shell=True)
 
 
 def pick_port():
