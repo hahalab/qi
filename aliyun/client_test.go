@@ -16,6 +16,7 @@ func newCli() *Client {
 		OssBucketName:   "this-test",
 		OssEndPoint:     "oss-cn-beijing.aliyuncs.com",
 		LogEndPoint:     "cn-beijing.log.aliyuncs.com",
+		ApiEndPoint:     "apigateway.cn-beijing.aliyuncs.com",
 	})
 	if err != nil {
 		panic(err)
@@ -42,6 +43,14 @@ func Test_CreateService(t *testing.T) {
 func Test_CreateLog(t *testing.T) {
 	cli := newCli()
 	err := cli.CreateLogStore("fc-store-test-it", "fc-store")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_DeleteFunc(t *testing.T) {
+	cli := newCli()
+	err := cli.DeleteFunction("oss_demo", "fc-oss")
 	if err != nil {
 		t.Fatal(err)
 	}
