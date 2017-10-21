@@ -4,18 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
 type Client struct {
 	conn   *http.Client
 	config *Config
+	ossCli *oss.Client
 }
 
-func NewClient(config *Config) *Client {
+func NewClient(config *Config) (*Client, error) {
 	cli := http.Client{
 		Timeout: time.Second * 20,
 		Transport: &http.Transport{
@@ -31,15 +35,23 @@ func NewClient(config *Config) *Client {
 			ResponseHeaderTimeout: 12 * time.Second,
 		},
 	}
-
+	ossCli, err := oss.New("http://"+config.OssEndPoint, config.AccessKeyID, config.AccessKeySecret)
+	if err != nil {
+		return nil, err
+	}
+	err = ossCli.CreateBucket(config.OssBucketName)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		conn:   &cli,
 		config: config,
-	}
+		ossCli: ossCli,
+	}, nil
 }
 
 func (client *Client) Get(path string) ([]byte, error) {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.Domain)
+	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("GET", host+path, nil)
 	if err != nil {
 		return nil, err
@@ -52,18 +64,18 @@ func (client *Client) Get(path string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("resp status not 200")
-	}
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("resp status not 200,content:%s", string(content))
 	}
 	return content, nil
 }
 
 func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.Domain)
+	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("POST", host+path, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -81,9 +93,8 @@ func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(content))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("resp status not 200")
+		return nil, fmt.Errorf("resp status not 200,content:%s", string(content))
 	}
 	return content, nil
 }
@@ -98,4 +109,45 @@ func (client *Client) CreateService(service Service) error {
 		return err
 	}
 	return nil
+}
+
+func (client *Client) CreateFunction(serviceName string, function Function) error {
+	reqBody, err := json.Marshal(function)
+	if err != nil {
+		return err
+	}
+	_, err = client.Post(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (client *Client) InvokeFunction(serviceName string, functionName string, event []byte) ([]byte, error) {
+	content, err := client.Post(fmt.Sprintf("/services/%s/functions/%s/invocations", serviceName, functionName), event)
+	if err != nil {
+		return nil, err
+	}
+	return content, err
+}
+
+//BucketName为阿里云全局唯一，所以需要加NameSpace避免命名冲突
+func (client *Client) CreateBucket(bucketName string) error {
+	return client.ossCli.CreateBucket(bucketName)
+}
+
+func (client *Client) PutObject(objectKey string, reader io.Reader) error {
+	bucket, err := client.ossCli.Bucket(client.config.OssBucketName)
+	if err != nil {
+		return err
+	}
+	return bucket.PutObject(objectKey, reader)
+}
+
+func (client *Client) GetObject(objectKey string) (io.ReadCloser, error) {
+	bucket, err := client.ossCli.Bucket(client.config.OssBucketName)
+	if err != nil {
+		return nil, err
+	}
+	return bucket.GetObject(objectKey)
 }

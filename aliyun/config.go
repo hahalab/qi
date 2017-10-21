@@ -4,5 +4,9 @@ type Config struct {
 	AccessKeyID     string
 	AccessKeySecret string
 	AccountID       string
-	Domain          string
+	//cn-beijing.fc.aliyuncs.com
+	FcEndPoint string
+	//oss-cn-beijing.aliyuncs.com
+	OssEndPoint   string
+	OssBucketName string
 }

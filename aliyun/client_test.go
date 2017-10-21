@@ -9,7 +9,7 @@ func Test_CreateService(t *testing.T) {
 	cli := NewClient(&Config{
 		AccessKeyID:     "LTAIII8mgWu95PjV",
 		AccessKeySecret: "xxxxxxxxxxxxxxx",
-		Domain:          "cn-beijing.fc.aliyuncs.com",
+		FcEndPoint:      "cn-beijing.fc.aliyuncs.com",
 		AccountID:       "xxxxxxxxxxxxxxx",
 	})
 	fmt.Println(cli.CreateService(Service{
