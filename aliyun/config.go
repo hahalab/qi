@@ -1,8 +1,12 @@
 package aliyun
 
 type Config struct {
-	AccessKeyID     string `validate:"required"`
-	AccessKeySecret string `validate:"required"`
-	AccountID       string `validate:"required"`
-	Domain          string `validate:"required"`
+	AccessKeyID     string
+	AccessKeySecret string
+	AccountID       string
+	//cn-beijing.fc.aliyuncs.com
+	FcEndPoint string
+	//oss-cn-beijing.aliyuncs.com
+	OssEndPoint   string
+	OssBucketName string
 }
