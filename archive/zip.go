@@ -44,8 +44,53 @@ func Build(dir string) error {
 }
 
 func injectProxy(tw *zip.Writer) error {
-	dir := "/Users/jiangjinyang/workspace/go/src/github.com/todaychiji/ha/proxy"
-	return injectDir(dir, tw)
+	input, err := codeZipBytes()
+	if err != nil {
+		return err
+	}
+	r, err := zip.NewReader(bytes.NewReader(input), int64(len(input)))
+	if err != nil {
+		return err
+	}
+	for _, file := range r.File {
+		fmt.Printf("Add file %s\n", file.Name)
+		info := file.FileInfo()
+		header, err := zip.FileInfoHeader(info)
+		header.Name = file.Name
+
+		if info.IsDir() {
+			header.Name += "/"
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		if info.Mode()&os.ModeSymlink != 0 {
+			header.SetMode(0)
+		}
+
+		//fmt.Printf("create heade %+v\n", header)
+		writer, err := tw.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			continue
+		}
+
+		r, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+
+		_, err = io.Copy(writer, r)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func injectDir(dir string, tw *zip.Writer) error {
