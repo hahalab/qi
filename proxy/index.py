@@ -36,6 +36,9 @@ def handler(event, context):
     wait_for_listen(port)
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
     print "response headers :", headers
+    headers = response.headers
+    for k, v in headers.items():
+        headers[k] = v.split(';')
     result = dict(headers=headers, data=response.content, code=response.status_code)
     print "result :", result
     p.send_signal(subprocess.signal.SIGTERM)
@@ -43,9 +46,6 @@ def handler(event, context):
         time.sleep(0.1)
     # logger.info(p.stdout)
     # logger.error(p.stderr)
-    headers = response.headers
-    for k, v in headers.items():
-        headers[k] = v.split(';')
     return result
 
 
