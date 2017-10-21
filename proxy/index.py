@@ -5,7 +5,6 @@ import requests
 import shlex
 import socket
 import subprocess
-import sys
 import time
 import urlparse
 
@@ -20,10 +19,13 @@ def handler(event, context):
 
     logger.info("receive event: {} context: {}".format(event, context))
 
-    headers = getattr(event, "headers", {})
+    headers = event.get("headers", {})
 
-    for k, v in headers:
+    for k, v in headers.items():
         headers[k] = ";".join(v)
+
+    if "Content-Length" in headers:
+        del headers["Content-Length"]
 
     event["headers"] = headers
 
@@ -33,13 +35,18 @@ def handler(event, context):
 
     wait_for_listen(port)
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
-    p.terminate()
+    print "response headers :", headers
+    result = dict(headers=headers, data=response.content, code=response.status_code)
+    print "result :", result
+    p.send_signal(subprocess.signal.SIGTERM)
+    while p.poll() is None:
+        time.sleep(0.1)
     # logger.info(p.stdout)
     # logger.error(p.stderr)
     headers = response.headers
-    for k, v in headers:
+    for k, v in headers.items():
         headers[k] = v.split(';')
-    return dict(headers=headers, data=response.content, code=response.status_code)
+    return result
 
 
 def wait_for_listen(port):
@@ -60,8 +67,8 @@ def read_config():
 def start_command(cmd, port):
     my_env = os.environ.copy()
     my_env["PORT"] = str(port)
-    args = shlex.split('sh -c "{}"'.format(cmd))
-    return subprocess.Popen(args, stdout=sys.stdout, stderr=sys.stderr, env=my_env)
+    args = shlex.split(cmd)
+    return subprocess.Popen(args, env=my_env)
 
 
 def pick_port():
