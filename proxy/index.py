@@ -35,11 +35,11 @@ def handler(event, context):
 
     wait_for_listen(port)
     response = send_request(port=port, headers=headers, method=method, data=data, path=path)
-    print "response headers :", headers
-    headers = response.headers
+    headers = dict(response.headers)
     for k, v in headers.items():
         headers[k] = v.split(';')
-    result = dict(headers=headers, data=response.content, code=response.status_code)
+    data = list(bytearray(response.content))
+    result = dict(headers=headers, data=data, code=response.status_code)
     print "result :", result
     p.send_signal(subprocess.signal.SIGTERM)
     while p.poll() is None:
