@@ -32,10 +32,18 @@ func (b Builder) Deploy(serviceName string) error {
 
 	fileEncoded := base64.StdEncoding.EncodeToString(file)
 
+	err = b.CreateLogStore("qilog", "fclog")
+	if err != nil {
+		return err
+	}
 	err = b.CreateService(aliyun.Service{
 		ServiceName: serviceName,
 		Description: "s",
 		Role:        "acs:ram::1759916402662922:role/fc-logs",
+		LogConfig: aliyun.LogConfig{
+			Project:  "qilog",
+			Logstore: "fclog",
+		},
 	})
 	if err != nil {
 		return err
