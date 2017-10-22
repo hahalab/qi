@@ -17,7 +17,7 @@ func (r RawRouterConf) Less(i, j int) bool {
 	lenOfI := len(strings.SplitN(r[i].Prefix, "/", -1))
 	lenOfJ := len(strings.SplitN(r[j].Prefix, "/", -1))
 
-	return lenOfI < lenOfJ
+	return lenOfI > lenOfJ
 }
 
 func (r RawRouterConf) Swap(i, j int) {

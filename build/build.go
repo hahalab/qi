@@ -97,13 +97,17 @@ func (b Builder) Qi(hintMessage chan string) error {
 	}
 
 	var index = -1
-	for i := range routerRouters {
-		index = i
+	for i,v := range routerRouters {
+		if v.Service==cfg.Name{
+			index = i
+		}
 	}
+	logrus.Debugf("%#v",routerRouters)
 	if index == -1 {
 		routerRouters = append(routerRouters, conf.RawRouterLine{})
 		index = len(routerRouters) - 1
 	}
+
 	routerRouters[index] = conf.RawRouterLine{
 		Prefix:   "/" + cfg.Name,
 		Service:  cfg.Name,
