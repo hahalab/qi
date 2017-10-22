@@ -154,12 +154,8 @@ func (client *Client) CreateFunction(serviceName string, function Function) erro
 	if err == nil {
 		err = client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
 		if err != nil {
-			fmt.Println("Delete Func", err)
 			return err
 		}
-		fmt.Println("DELETE FUNC SUCCESS!", serviceName, function.FunctionName)
-	} else {
-		fmt.Println("Not GET Func", err)
 	}
 
 	reqBody, err := json.Marshal(function)
