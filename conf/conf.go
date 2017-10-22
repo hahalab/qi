@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/todaychiji/ha/aliyun"
 	"github.com/urfave/cli"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -20,9 +20,9 @@ var (
 )
 
 type CommonConf struct {
-	aliyun.Config `json:"ali" env:"ALI" validate:"required,dive"`
-	Debug         bool   `json:"debug" env:"DEBUG"`
-	RouterPath    string `json:"router_path" env:"ROUTER_PATH,router.conf" validate:"required"`
+	aliyun.Config     `json:"ali" env:"ALI" validate:"required,dive"`
+	Debug      bool   `json:"debug" env:"DEBUG"`
+	RouterPath string `json:"router_path" env:"ROUTER_PATH,router.conf" validate:"required"`
 }
 
 type GwConf struct {
@@ -34,14 +34,15 @@ type GwConf struct {
 type UpConf struct {
 	CommonConf `validate:"required,dive"`
 
-	CodePath   string `validate:"required"`
-	CodeConfig `validate:"required,dive"`
+	CodePath string `validate:"required"`
+	CodeConfig      `validate:"required,dive"`
 }
 
 type CodeConfig struct {
 	Name    string `yaml:"name"`
 	Command string `yaml:"command"`
 	Build   string `yaml:"build"`
+	Files   string `yaml:"files"`
 }
 
 func (c CodeConfig) String() string {

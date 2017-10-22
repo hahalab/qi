@@ -41,7 +41,19 @@ func Build(dir string, hintMessage chan string) error {
 	}
 	hintMessage <- "Building"
 	// Write files to tw
-	err = injectDir(dir, tw)
+	var files []string
+	if c.Files != "" {
+		files = strings.Split(c.Files, ";")
+	} else {
+		files = append(files, dir)
+	}
+
+	for _, f := range files {
+		err = injectDir(f, tw)
+		if err != nil {
+			return err
+		}
+	}
 
 	if err := tw.Close(); err != nil {
 		return err
