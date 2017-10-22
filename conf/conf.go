@@ -45,10 +45,7 @@ type CodeConfig struct {
 }
 
 func (c CodeConfig) String() string {
-	return fmt.Sprintf(`
-	Project name: %s
-	App init command: %s
-	Build command: %s`, c.Name, c.Command, c.Build)
+	return fmt.Sprintf("Project name: %s  |  App init command: %s  |  Build command: %s", c.Name, c.Command, c.Build)
 }
 
 func LoadConfig(config string) (*CodeConfig, error) {
@@ -60,7 +57,7 @@ func LoadConfig(config string) (*CodeConfig, error) {
 	if err = yaml.Unmarshal(data, &c); err != nil {
 		panic(err)
 	}
-	logrus.Infof("%+v\n", c)
+	fmt.Printf("%+v\n", c)
 	return &c, nil
 }
 
