@@ -13,7 +13,6 @@ import (
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/denverdino/aliyungo/common"
-	"github.com/sirupsen/logrus"
 )
 
 type Client struct {
