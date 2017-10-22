@@ -12,15 +12,33 @@ import (
 	"strings"
 
 	"github.com/todaychiji/ha/conf"
+	"github.com/tj/go-spin"
+	"time"
 )
 
 // 把目录打包成 cwd()/code.zip
 func Build(dir string) error {
+	hintMessage := make(chan string, 1)
+	go func(m chan string) {
+		s := spin.New()
+		message := <-m
+		for {
+			select {
+			case message = <-m:
+				s.Reset()
+				fmt.Printf("\r  \033[36m%s\033[m %s ", message, s.Next())
+			default:
+				fmt.Printf("\r  \033[36m%s\033[m %s ", message, s.Next())
+				time.Sleep(time.Millisecond * 100)
+			}
+		}
+	}(hintMessage)
 	c, err := conf.LoadConfig(path.Join(dir, "ha.yml"))
 	if err != nil || c == nil {
 		return err
 	}
 
+	hintMessage <- "Compiling"
 	if err := executeBuild(dir, *c); err != nil {
 		return err
 	}
@@ -33,10 +51,13 @@ func Build(dir string) error {
 
 	tw := zip.NewWriter(output)
 	// Write index.py to zip
+
+	hintMessage <- "Injecting"
 	err = injectProxy(tw)
 	if err != nil {
 		return err
 	}
+	hintMessage <- "Building"
 	// Write files to tw
 	err = injectDir(dir, tw)
 
@@ -57,7 +78,7 @@ func injectProxy(tw *zip.Writer) error {
 		return err
 	}
 	for _, file := range r.File {
-		fmt.Printf("Add file %s\n", file.Name)
+		//fmt.Printf("Add file %s\n", file.Name)
 		info := file.FileInfo()
 		header, err := zip.FileInfoHeader(info)
 		header.Name = file.Name
@@ -103,7 +124,7 @@ func injectDir(dir string, tw *zip.Writer) error {
 		if len(zipPath) > 1 {
 			zipPath = zipPath[1:]
 		}
-		fmt.Printf("Add file %s to %s %v\n", path, zipPath, info)
+		//fmt.Printf("Add file %s to %s %v\n", path, zipPath, info)
 		header, err := zip.FileInfoHeader(info)
 
 		header.Name = zipPath
@@ -164,7 +185,6 @@ func executeBuild(dir string, c conf.CodeConfig) error {
 	out := []byte{}
 	cmd.Stdout = bytes.NewBuffer(out)
 	err = cmd.Run()
-	fmt.Printf("Build result: %s\n", out)
 	if err != nil {
 		return err
 	}
