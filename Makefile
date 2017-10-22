@@ -7,16 +7,16 @@ export installsuffix=cgo
 ## keel ##
 .PHONY: build
 build: $(shell find . -name '*.go') .git
-	go install -ldflags "-X main.version=${VERSION}" github.com/todaychiji/ha/cli/up
+	go install -ldflags "-X main.version=${VERSION}" github.com/todaychiji/ha/cli/qi
 
 .PHONY: run
 run: build
-	./bin/up --version
+	./bin/qi --version
 
 
 .PHONY: server
 server: build
-	./bin/up gateway
+	./bin/qi gateway
 
 .PHONY: test
 test:

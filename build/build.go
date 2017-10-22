@@ -59,7 +59,7 @@ func (b Builder) Deploy(serviceName string) error {
 	return nil
 }
 
-func (b Builder) Up() error {
+func (b Builder) Qi() error {
 	cfg := conf.GetUPConf()
 	routerReader, err := b.GetObject(cfg.RouterPath)
 	if err != nil {

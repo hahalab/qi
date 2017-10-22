@@ -12,14 +12,14 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "up"
+	app.Name = "qi"
 	app.Version = version
 	app.Usage = "build and deploy any time any where"
 	app.Before = func(context *cli.Context) error {
 		logrus.SetOutput(os.Stdout)
 		return nil
 	}
-	app.Action = up
+	app.Action = qi
 	app.Flags = conf.BuildFlags
 	app.Commands = []cli.Command{
 		{

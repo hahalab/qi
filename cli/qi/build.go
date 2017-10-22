@@ -11,7 +11,7 @@ import (
 	"github.com/todaychiji/ha/conf"
 )
 
-func up(c *cli.Context) error {
+func qi(c *cli.Context) error {
 	if err := conf.MustParseUpConfig(c); err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func up(c *cli.Context) error {
 		return err
 	}
 
-	return build.Up()
+	return build.Qi()
 }
 
 func onlyBuild(c *cli.Context) error {
