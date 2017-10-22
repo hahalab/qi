@@ -85,7 +85,7 @@ func onlyDeploy(c *cli.Context) error {
 		return err
 	}
 
-	err = build.Deploy(conf.Name, message)
+	err = build.Deploy(conf.Name, conf.Role, message)
 	if err != nil {
 		logrus.Fatal(err)
 	}

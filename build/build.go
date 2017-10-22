@@ -29,7 +29,7 @@ func (b Builder) Build(path string, hintMessage chan string) (err error) {
 	return nil
 }
 
-func (b Builder) Deploy(serviceName string, hintMessage chan string) error {
+func (b Builder) Deploy(serviceName, role string, hintMessage chan string) error {
 	hintMessage <- "Deploying"
 
 	file, err := ioutil.ReadFile("code.zip")
@@ -46,7 +46,7 @@ func (b Builder) Deploy(serviceName string, hintMessage chan string) error {
 	err = b.CreateService(aliyun.Service{
 		ServiceName: serviceName,
 		Description: "s",
-		Role:        "acs:ram::1759916402662922:role/fc-logs",
+		Role:        role,
 		LogConfig: aliyun.LogConfig{
 			Project:  "qilog",
 			Logstore: "fclog",
@@ -86,7 +86,7 @@ func (b Builder) Qi(hintMessage chan string) error {
 		return err
 	}
 
-	if err := b.Deploy(cfg.Name, hintMessage); err != nil {
+	if err := b.Deploy(cfg.Name, cfg.Role, hintMessage); err != nil {
 		return err
 	}
 

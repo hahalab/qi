@@ -9,4 +9,5 @@ type Config struct {
 	OssBucketName   string `validate:"required" env:"OSS_BUCKET_NAME"`
 	LogEndPoint     string `validate:"required" env:"LOG_ENDPOINT,cn-beijing.log.aliyuncs.com"`
 	ApiEndPoint     string `validate:"required" env:"LOG_ENDPOINT,apigateway.cn-beijing.aliyuncs.com"`
+	Role            string `validate:"required" env:"ROLE"`
 }
