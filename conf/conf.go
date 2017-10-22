@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-
-	yaml "gopkg.in/yaml.v2"
+	"os/user"
 
 	"github.com/go-playground/validator"
 	"github.com/sakeven/go-env"
 	"github.com/sirupsen/logrus"
 	"github.com/todaychiji/ha/aliyun"
 	"github.com/urfave/cli"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -71,7 +71,12 @@ func MustParseGWConfig(ctx *cli.Context) error {
 		cfg.Port = f
 	}
 
-	file, err := ioutil.ReadFile("~/.ha.conf")
+	usr, err := user.Current()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	file, err := ioutil.ReadFile(usr.HomeDir + "/.ha.conf")
 	if err == nil && len(file) != 0 {
 		err = json.Unmarshal(file, &cfg)
 		if err != nil {
@@ -93,9 +98,14 @@ func MustParseUpConfig(ctx *cli.Context) error {
 		return err
 	}
 
-	file, err := ioutil.ReadFile("~/.ha.conf")
+	usr, err := user.Current()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	file, err := ioutil.ReadFile(usr.HomeDir + "/.ha.conf")
 	if err == nil && len(file) != 0 {
-		err = json.Unmarshal(file, &cfg)
+		err = json.Unmarshal(file, &upCfg)
 		if err != nil {
 			return err
 		}
