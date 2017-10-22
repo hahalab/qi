@@ -49,7 +49,8 @@ func Build(dir string, hintMessage chan string) error {
 	}
 
 	for _, f := range files {
-		err = injectDir(f, tw)
+		targetPath := path.Join(dir, f)
+		err = injectDir(targetPath, dir, tw)
 		if err != nil {
 			return err
 		}
@@ -112,17 +113,15 @@ func injectProxy(tw *zip.Writer) error {
 	return nil
 }
 
-func injectDir(dir string, tw *zip.Writer) error {
-	workdir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		zipPath := strings.TrimPrefix(path, workdir)
+func injectDir(dir string, baseDir string, tw *zip.Writer) error {
+	err := filepath.Walk(dir, func(filePath string, info os.FileInfo, err error) error {
+		zipPath := strings.TrimPrefix(filePath, baseDir)
 		if len(zipPath) > 1 {
 			zipPath = zipPath[1:]
 		}
-		//fmt.Printf("Add file %s to %s %v\n", path, zipPath, info)
+		if info == nil {
+			return nil
+		}
 		header, err := zip.FileInfoHeader(info)
 
 		header.Name = zipPath
@@ -147,7 +146,7 @@ func injectDir(dir string, tw *zip.Writer) error {
 			return nil
 		}
 
-		file, err := os.Open(path)
+		file, err := os.Open(filePath)
 		if err != nil {
 			return err
 		}
