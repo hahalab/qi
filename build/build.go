@@ -20,11 +20,18 @@ func NewBuilder(client *aliyun.Client) (Builder, error) {
 	return Builder{client}, nil
 }
 
-func (b Builder) Build(path string) (err error) {
-	return archive.Build(path)
+func (b Builder) Build(path string, hintMessage chan string) (err error) {
+	err = archive.Build(path, hintMessage)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	return nil
 }
 
-func (b Builder) Deploy(serviceName string) error {
+func (b Builder) Deploy(serviceName string, hintMessage chan string) error {
+	hintMessage <- "Deploying"
+
 	file, err := ioutil.ReadFile("code.zip")
 	if err != nil {
 		return err
@@ -59,7 +66,7 @@ func (b Builder) Deploy(serviceName string) error {
 	return nil
 }
 
-func (b Builder) Qi() error {
+func (b Builder) Qi(hintMessage chan string) error {
 	cfg := conf.GetUPConf()
 	routerReader, err := b.GetObject(cfg.RouterPath)
 	if err != nil {
@@ -67,11 +74,11 @@ func (b Builder) Qi() error {
 	}
 
 	//update function
-	if err := b.Build(cfg.CodePath); err != nil {
+	if err := b.Build(cfg.CodePath, hintMessage); err != nil {
 		return err
 	}
 
-	if err := b.Deploy(cfg.Name); err != nil {
+	if err := b.Deploy(cfg.Name, hintMessage); err != nil {
 		return err
 	}
 

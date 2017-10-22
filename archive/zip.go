@@ -3,7 +3,6 @@ package archive
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -12,27 +11,10 @@ import (
 	"strings"
 
 	"github.com/todaychiji/ha/conf"
-	"github.com/tj/go-spin"
-	"time"
 )
 
-// 把目录打包成 cwd()/code.zip
-func Build(dir string) error {
-	hintMessage := make(chan string, 1)
-	go func(m chan string) {
-		s := spin.New()
-		message := <-m
-		for {
-			select {
-			case message = <-m:
-				s.Reset()
-				fmt.Printf("\r  \033[36m%s\033[m %s ", message, s.Next())
-			default:
-				fmt.Printf("\r  \033[36m%s\033[m %s ", message, s.Next())
-				time.Sleep(time.Millisecond * 100)
-			}
-		}
-	}(hintMessage)
+// Build 把目录打包成 cwd()/code.zip
+func Build(dir string, hintMessage chan string) error {
 	c, err := conf.LoadConfig(path.Join(dir, "ha.yml"))
 	if err != nil || c == nil {
 		return err
