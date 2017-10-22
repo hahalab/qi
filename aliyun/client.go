@@ -157,8 +157,6 @@ func (client *Client) CreateFunction(serviceName string, function Function) erro
 		if err != nil {
 			return err
 		}
-	} else {
-		logrus.Fatal("Not GET Func", err)
 	}
 
 	reqBody, err := json.Marshal(function)
