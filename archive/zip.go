@@ -116,9 +116,6 @@ func injectProxy(tw *zip.Writer) error {
 func injectDir(dir string, baseDir string, tw *zip.Writer) error {
 	err := filepath.Walk(dir, func(filePath string, info os.FileInfo, err error) error {
 		zipPath := strings.TrimPrefix(filePath, baseDir)
-		if len(zipPath) > 1 {
-			zipPath = zipPath[1:]
-		}
 		if info == nil {
 			return nil
 		}
