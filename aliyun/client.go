@@ -12,18 +12,18 @@ import (
 
 	"github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 type Client struct {
 	conn   *http.Client
-	config *conf.AliyunConfig
+	config *config.AliyunConfig
 	ossCli *oss.Client
 	logCli *sls.Client
 	apiCli *ApiGatewayClient
 }
 
-func NewClient(config *conf.AliyunConfig) (*Client, error) {
+func NewClient(config *config.AliyunConfig) (*Client, error) {
 	cli := http.Client{
 		Timeout: time.Second * 20,
 		Transport: &http.Transport{

@@ -1,4 +1,4 @@
-package conf
+package config
 
 type AliyunConfig struct {
 	AccessKeyID     string `validate:"required" env:"ACCESS_KEY"`

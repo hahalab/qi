@@ -1,4 +1,4 @@
-package conf
+package config
 
 import (
 	"encoding/json"
@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	cfg   = GwConf{}
-	upCfg = UpConf{}
+	cfg    = GwConf{}
+	config = Config{}
 )
 
 type CommonConf struct {
@@ -30,7 +30,7 @@ type GwConf struct {
 	Port string `json:"port" env:"PORT,8080"`
 }
 
-type UpConf struct {
+type Config struct {
 	CommonConf `validate:"required,dive"`
 
 	CodePath string `validate:"required"`
@@ -91,7 +91,7 @@ func MustParseGWConfig(ctx *cli.Context) error {
 	return validator.New().Struct(cfg)
 }
 
-func LoadQiConfig(path string, qiConfig *UpConf) (err error) {
+func LoadQiConfig(path string, qiConfig *Config) (err error) {
 	file, err := ioutil.ReadFile(path)
 	if err == nil {
 		err = json.Unmarshal(file, qiConfig)
@@ -108,8 +108,8 @@ func LoadCodeConfig(path string, codeConfig *CodeConfig) (err error) {
 }
 
 func MustParseUpConfig(ctx *cli.Context) error {
-	upCfg.CodePath = ctx.String(FlagCodePath)
-	err := env.Decode(&(upCfg.CommonConf))
+	config.CodePath = ctx.String(FlagCodePath)
+	err := env.Decode(&(config.CommonConf))
 	if err != nil {
 		return err
 	}
@@ -119,27 +119,27 @@ func MustParseUpConfig(ctx *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	err = LoadQiConfig(usr.HomeDir+"/.ha.conf", &upCfg)
+	err = LoadQiConfig(usr.HomeDir+"/.ha.conf", &config)
 	if err != nil {
 		return err
 	}
 
-	err = LoadCodeConfig(upCfg.CodePath+"/ha.yml", &(upCfg.CodeConfig))
+	err = LoadCodeConfig(config.CodePath+"/ha.yml", &(config.CodeConfig))
 	if err != nil {
 		return err
 	}
 
-	if upCfg.Debug {
+	if config.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	return validator.New().Struct(upCfg)
+	return validator.New().Struct(config)
 }
 
 func GetGWConf() GwConf {
 	return cfg
 }
 
-func GetUPConf() UpConf {
-	return upCfg
+func GetConfig() Config {
+	return config
 }

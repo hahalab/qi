@@ -2,7 +2,7 @@ package aliyun
 
 import (
 	"testing"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 	"os/user"
 	"github.com/sirupsen/logrus"
 )
@@ -12,8 +12,8 @@ func newCli() *Client {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	qiConfig := conf.UpConf{}
-	err = conf.LoadQiConfig(usr.HomeDir+"/.ha.conf", &qiConfig)
+	qiConfig := config.Config{}
+	err = config.LoadQiConfig(usr.HomeDir+"/.ha.conf", &qiConfig)
 
 	cli, err := NewClient(&(qiConfig.CommonConf.AliyunConfig))
 	if err != nil {

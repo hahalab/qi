@@ -12,18 +12,18 @@ import (
 	"github.com/hahalab/qi/aliyun"
 	"github.com/hahalab/qi/archive"
 	"github.com/hahalab/qi/build"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 func qi(c *cli.Context) error {
 	message := newMessager()
 	message <- "Preparing"
 
-	if err := conf.MustParseUpConfig(c); err != nil {
+	if err := config.MustParseUpConfig(c); err != nil {
 		return err
 	}
 
-	conf := conf.GetUPConf()
+	conf := config.GetConfig()
 
 	err := validator.New().Struct(conf)
 	if err != nil {
@@ -53,7 +53,7 @@ func onlyBuild(c *cli.Context) error {
 	message := newMessager()
 	defer close(message)
 	message <- "Preparing"
-	codePath := c.String(conf.FlagCodePath)
+	codePath := c.String(config.FlagCodePath)
 
 	err := archive.Build(codePath, message)
 	if err != nil {
@@ -68,7 +68,7 @@ func onlyDeploy(c *cli.Context) error {
 	defer close(message)
 	message <- "Preparing"
 
-	conf := conf.GetUPConf()
+	conf := config.GetConfig()
 
 	err := validator.New().Struct(conf)
 	if err != nil {

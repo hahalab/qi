@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/sirupsen/logrus"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 type oss interface {
@@ -102,7 +102,7 @@ func (m mux) findLambda(url string) (*Lambda, error) {
 		return nil, err
 	}
 
-	var conf conf.RawRouterConf
+	var conf config.RawRouterConf
 	err = json.NewDecoder(c).Decode(&conf)
 	if err != nil {
 		return nil, err

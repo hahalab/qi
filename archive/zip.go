@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 // Build 把目录打包成 cwd()/code.zip
 func Build(dir string, hintMessage chan string) error {
-	c, err := conf.LoadConfig(path.Join(dir, "ha.yml"))
+	c, err := config.LoadConfig(path.Join(dir, "ha.yml"))
 	if err != nil || c == nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func injectDir(dir string, baseDir string, tw *zip.Writer) error {
 	return err
 }
 
-func executeBuild(dir string, c conf.CodeConfig) error {
+func executeBuild(dir string, c config.CodeConfig) error {
 
 	if c.Build == "" {
 		return nil

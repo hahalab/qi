@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/hahalab/qi/aliyun"
 	"github.com/hahalab/qi/archive"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 type Builder struct {
@@ -77,7 +77,7 @@ func (b Builder) Deploy(serviceName, role string, hintMessage chan string) error
 }
 
 func (b Builder) Qi(m chan string) error {
-	cfg := conf.GetUPConf()
+	cfg := config.GetConfig()
 
 	if err := b.Build(cfg.CodePath, m); err != nil {
 		return err

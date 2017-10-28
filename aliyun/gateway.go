@@ -5,7 +5,7 @@ import (
 	"time"
 	"io/ioutil"
 	"net/http"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 	"net"
 	"strconv"
 	"github.com/denverdino/aliyungo/util"
@@ -13,7 +13,7 @@ import (
 
 type ApiGatewayClient struct {
 	conn   *http.Client
-	config *conf.AliyunConfig
+	config *config.AliyunConfig
 }
 
 var commonQueryParameter map[string]string = map[string]string{
@@ -23,7 +23,7 @@ var commonQueryParameter map[string]string = map[string]string{
 	"SignatureVersion": "1.0",
 }
 
-func NewApiGatewayClient(config *conf.AliyunConfig) (*ApiGatewayClient, error) {
+func NewApiGatewayClient(config *config.AliyunConfig) (*ApiGatewayClient, error) {
 	cli := http.Client{
 		Timeout: time.Second * 20,
 		Transport: &http.Transport{
