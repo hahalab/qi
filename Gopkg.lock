@@ -29,7 +29,8 @@
   branch = "master"
   name = "github.com/denverdino/aliyungo"
   packages = ["common","util"]
-  revision = "199fa376135951b938a53634048bb32e5dc823c1"
+  revision = "928adf08dca2216f0d416eb77d6ee418ef35baea"
+  source = "https://github.com/jjyr/aliyungo/package.git"
 
 [[projects]]
   name = "github.com/go-playground/locales"
@@ -112,6 +113,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7ed6ffd1e8d893aa6f2266a31b111aa8ad0923c1d8fb15ac545e730e1a30c176"
+  inputs-digest = "ef1155e9c61d54dad5c6e83201947433e6d722b35e24075f4059462ac4db839d"
   solver-name = "gps-cdcl"
   solver-version = 1

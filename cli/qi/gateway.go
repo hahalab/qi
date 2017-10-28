@@ -21,7 +21,7 @@ func gatewayInit(c *cli.Context) {
 		logrus.Fatal(err)
 	}
 
-	aliClient, err := aliyun.NewClient(&conf.Config)
+	aliClient, err := aliyun.NewClient(&conf.AliyunConfig)
 	if err != nil {
 		logrus.Fatal(err)
 	}

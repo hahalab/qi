@@ -151,11 +151,15 @@ func setQueryValues(i interface{}, values *url.Values, prefix string) {
 				if ifc != nil {
 					if anonymous {
 						SetQueryValues(ifc, values)
+						continue
 					} else {
-						prefixName := fieldName + "."
-						setQueryValues(ifc, values, prefixName)
+						bytes, err := json.Marshal(ifc)
+						if err == nil {
+							value = string(bytes)
+						} else {
+							log.Printf("Failed to convert JSON: %v", err)
+						}
 					}
-					continue
 				}
 			}
 		}

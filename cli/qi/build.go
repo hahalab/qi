@@ -30,7 +30,7 @@ func qi(c *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	aliClient, err := aliyun.NewClient(&conf.Config)
+	aliClient, err := aliyun.NewClient(&conf.AliyunConfig)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func onlyDeploy(c *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	aliClient, err := aliyun.NewClient(&conf.Config)
+	aliClient, err := aliyun.NewClient(&conf.AliyunConfig)
 	if err != nil {
 		logrus.Fatal(err)
 	}

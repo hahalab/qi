@@ -10,20 +10,20 @@ import (
 	"net/http"
 	"time"
 
-	sls "github.com/aliyun/aliyun-log-go-sdk"
+	"github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/denverdino/aliyungo/common"
+	"github.com/hahalab/qi/conf"
 )
 
 type Client struct {
-	conn      *http.Client
-	config    *Config
-	ossCli    *oss.Client
-	logCli    *sls.Client
-	commonCli *common.Client
+	conn   *http.Client
+	config *conf.AliyunConfig
+	ossCli *oss.Client
+	logCli *sls.Client
+	apiCli *ApiGatewayClient
 }
 
-func NewClient(config *Config) (*Client, error) {
+func NewClient(config *conf.AliyunConfig) (*Client, error) {
 	cli := http.Client{
 		Timeout: time.Second * 20,
 		Transport: &http.Transport{
@@ -49,18 +49,20 @@ func NewClient(config *Config) (*Client, error) {
 	}
 	logCli := &sls.Client{Endpoint: config.LogEndPoint, AccessKeyID: config.AccessKeyID, AccessKeySecret: config.AccessKeySecret}
 
-	commonCli := &common.Client{}
-	commonCli.Init("http://"+config.ApiEndPoint, "2016-07-14", config.AccessKeyID, config.AccessKeySecret)
-
+	apiCLi, err := NewApiGatewayClient(config)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		conn:   &cli,
 		config: config,
 		ossCli: ossCli,
 		logCli: logCli,
+		apiCli: apiCLi,
 	}, nil
 }
 
-func (client *Client) Get(path string) ([]byte, error) {
+func (client *Client) get(path string) ([]byte, error) {
 	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("GET", host+path, nil)
 	if err != nil {
@@ -84,7 +86,7 @@ func (client *Client) Get(path string) ([]byte, error) {
 	return content, nil
 }
 
-func (client *Client) Delete(path string) error {
+func (client *Client) delete(path string) error {
 	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("DELETE", host+path, nil)
 	if err != nil {
@@ -108,7 +110,7 @@ func (client *Client) Delete(path string) error {
 	return nil
 }
 
-func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
+func (client *Client) post(path string, reqBody []byte) ([]byte, error) {
 	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("POST", host+path, bytes.NewReader(reqBody))
 	if err != nil {
@@ -134,7 +136,7 @@ func (client *Client) Post(path string, reqBody []byte) ([]byte, error) {
 }
 
 func (client *Client) CreateService(service Service) error {
-	_, err := client.Get(fmt.Sprintf("/2016-08-15/services/%s", service.ServiceName))
+	_, err := client.get(fmt.Sprintf("/2016-08-15/services/%s", service.ServiceName))
 	if err == nil {
 		return nil
 	}
@@ -142,7 +144,7 @@ func (client *Client) CreateService(service Service) error {
 	if err != nil {
 		return err
 	}
-	_, err = client.Post("/2016-08-15/services", reqBody)
+	_, err = client.post("/2016-08-15/services", reqBody)
 	if err != nil {
 		return err
 	}
@@ -150,9 +152,9 @@ func (client *Client) CreateService(service Service) error {
 }
 
 func (client *Client) CreateFunction(serviceName string, function Function) error {
-	_, err := client.Get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
+	_, err := client.get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
 	if err == nil {
-		err = client.Delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
+		err = client.delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
 		if err != nil {
 			return err
 		}
@@ -162,7 +164,7 @@ func (client *Client) CreateFunction(serviceName string, function Function) erro
 	if err != nil {
 		return err
 	}
-	_, err = client.Post(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
+	_, err = client.post(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
 	if err != nil {
 		return err
 	}
@@ -170,7 +172,7 @@ func (client *Client) CreateFunction(serviceName string, function Function) erro
 }
 
 func (client *Client) InvokeFunction(serviceName string, functionName string, event []byte) ([]byte, error) {
-	content, err := client.Post(fmt.Sprintf("/2016-08-15/services/%s/functions/%s/invocations", serviceName, functionName), event)
+	content, err := client.post(fmt.Sprintf("/2016-08-15/services/%s/functions/%s/invocations", serviceName, functionName), event)
 	if err != nil {
 		return nil, err
 	}

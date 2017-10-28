@@ -1,23 +1,21 @@
 package aliyun
 
 import (
-	"os"
 	"testing"
+	"github.com/hahalab/qi/conf"
+	"os/user"
+	"github.com/sirupsen/logrus"
 )
 
 func newCli() *Client {
-	aks := os.Getenv("AccessKeySecret")
-	accoundId := os.Getenv("AccountID")
-	cli, err := NewClient(&Config{
-		AccessKeyID:     "LTAIII8mgWu95PjV",
-		AccessKeySecret: aks,
-		FcEndPoint:      "cn-beijing.fc.aliyuncs.com",
-		AccountID:       accoundId,
-		OssBucketName:   "this-test",
-		OssEndPoint:     "oss-cn-beijing.aliyuncs.com",
-		LogEndPoint:     "cn-beijing.log.aliyuncs.com",
-		ApiEndPoint:     "apigateway.cn-beijing.aliyuncs.com",
-	})
+	usr, err := user.Current()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	qiConfig := conf.UpConf{}
+	err = conf.LoadQiConfig(usr.HomeDir+"/.ha.conf", &qiConfig)
+
+	cli, err := NewClient(&(qiConfig.CommonConf.AliyunConfig))
 	if err != nil {
 		panic(err)
 	}
@@ -43,6 +41,65 @@ func Test_CreateService(t *testing.T) {
 func Test_CreateLog(t *testing.T) {
 	cli := newCli()
 	err := cli.CreateLogStore("fc-store-test-it", "fc-store")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_CreateAPIGatewayGroup(t *testing.T) {
+	cli := newCli()
+	err := cli.apiCli.CreateAPIGroup(APIGroup{
+		GroupName:   "qitest",
+		Description: "qi test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_APIGateway(t *testing.T) {
+	cli := newCli()
+	err := cli.apiCli.CreateAPIGateway(APIGateway{
+		RegionId:    "cn-shanghai",
+		GroupId:     "fb64de791f7a4c708e7a97a2c5e7172d",
+		ApiName:     "qitest",
+		Visibility:  "PRIVATE",
+		Description: "qitest",
+		AuthType:    "ANONYMOUS",
+		RequestConfig: RequestConfig{
+			RequestProtocol:     "HTTP,HTTPS",
+			RequestHttpMethod:   "PATCH",
+			RequestPath:         "/",
+			BodyFormat:          "",
+			PostBodyDescription: "",
+			RequestMode:         "PASSTHROUGH",
+		},
+		ServiceConfig: ServiceConfig{
+			ServiceProtocol:   "FunctionCompute",
+			ServiceHttpMethod: "GET",
+			ServiceAddress:    "",
+			ServiceTimeout:    "500",
+			ServicePath:       "/",
+			Mock:              "FALSE",
+			MockResult:        "",
+			ServiceVpcEnable:  "FALSE",
+			VpcConfig:         struct{}{},
+			FunctionComputeConfig: FunctionComputeConfig{
+				FcRegionId:          "cn-shanghai",
+				ServiceName:         "test",
+				FunctionName:        "testyaml",
+				RoleArn:             "acs:ram::1896697416215058:role/aliyunapigatewayaccessingfcrole",
+				ContentTypeCatagory: "CLIENT",
+				ContentTypeValue:    ""},
+		},
+		RequestParamters:     nil,
+		ServiceParameters:    nil,
+		ServiceParametersMap: nil,
+		ResultType:           "PASSTHROUGH",
+		ResultSample:         "asd",
+		FailResultSample:     "asd",
+		ErrorCodeSamples:     nil,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

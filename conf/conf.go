@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/sakeven/go-env"
 	"github.com/sirupsen/logrus"
-	"github.com/hahalab/qi/aliyun"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
@@ -20,7 +19,7 @@ var (
 )
 
 type CommonConf struct {
-	aliyun.Config     `json:"ali" env:"ALI" validate:"required,dive"`
+	AliyunConfig      `json:"ali" env:"ALI" validate:"required,dive"`
 	Debug      bool   `json:"debug" env:"DEBUG"`
 	RouterPath string `json:"router_path" env:"ROUTER_PATH,router.conf" validate:"required"`
 }
@@ -92,6 +91,22 @@ func MustParseGWConfig(ctx *cli.Context) error {
 	return validator.New().Struct(cfg)
 }
 
+func LoadQiConfig(path string, qiConfig *UpConf) (err error) {
+	file, err := ioutil.ReadFile(path)
+	if err == nil {
+		err = json.Unmarshal(file, qiConfig)
+	}
+	return
+}
+
+func LoadCodeConfig(path string, codeConfig *CodeConfig) (err error) {
+	file, err := ioutil.ReadFile(path)
+	if err == nil {
+		err = json.Unmarshal(file, codeConfig)
+	}
+	return
+}
+
 func MustParseUpConfig(ctx *cli.Context) error {
 	upCfg.CodePath = ctx.String(FlagCodePath)
 	err := env.Decode(&(upCfg.CommonConf))
@@ -104,20 +119,12 @@ func MustParseUpConfig(ctx *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	file, err := ioutil.ReadFile(usr.HomeDir + "/.ha.conf")
-	if err == nil && len(file) != 0 {
-		err = json.Unmarshal(file, &upCfg)
-		if err != nil {
-			return err
-		}
-	}
-
-	file, err = ioutil.ReadFile(upCfg.CodePath + "/ha.yml")
+	err = LoadQiConfig(usr.HomeDir+"/.ha.conf", &upCfg)
 	if err != nil {
 		return err
 	}
 
-	err = yaml.Unmarshal(file, &(upCfg.CodeConfig))
+	err = LoadCodeConfig(upCfg.CodePath+"/ha.yml", &(upCfg.CodeConfig))
 	if err != nil {
 		return err
 	}
