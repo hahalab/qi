@@ -15,7 +15,7 @@ import (
 
 // Build 把目录打包成 cwd()/code.zip
 func Build(dir string, hintMessage chan string) error {
-	c, err := config.LoadConfig(path.Join(dir, "ha.yml"))
+	c, err := config.LoadConfig(path.Join(dir, "qi.yml"))
 	if err != nil || c == nil {
 		return err
 	}

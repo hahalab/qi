@@ -32,7 +32,7 @@ func main() {
 			Name:     "deploy",
 			Usage:    "only create/update function",
 			Flags:    config.BuildFlags,
-			Before:   config.MustParseUpConfig,
+			Before:   config.MustParseConfig,
 			Action:   onlyDeploy,
 			Category: "BUILD",
 		}, {

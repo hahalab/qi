@@ -13,6 +13,7 @@ import (
 	"github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/hahalab/qi/config"
+	"github.com/hahalab/qi/aliyun/entity"
 )
 
 type Client struct {
@@ -20,7 +21,7 @@ type Client struct {
 	config *config.AliyunConfig
 	ossCli *oss.Client
 	logCli *sls.Client
-	apiCli *ApiGatewayClient
+	*ApiGatewayClient
 }
 
 func NewClient(config *config.AliyunConfig) (*Client, error) {
@@ -54,11 +55,11 @@ func NewClient(config *config.AliyunConfig) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		conn:   &cli,
-		config: config,
-		ossCli: ossCli,
-		logCli: logCli,
-		apiCli: apiCLi,
+		conn:             &cli,
+		config:           config,
+		ossCli:           ossCli,
+		logCli:           logCli,
+		ApiGatewayClient: apiCLi,
 	}, nil
 }
 
@@ -110,6 +111,31 @@ func (client *Client) delete(path string) error {
 	return nil
 }
 
+func (client *Client) put(path string, reqBody []byte) ([]byte, error) {
+	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	req, err := http.NewRequest("PUT", host+path, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	date := time.Now().UTC().Format(http.TimeFormat)
+	req.Header.Set(HTTPHeaderDate, date)
+	req.Header.Set(HTTPHeaderContentType, "application/json")
+	client.signHeader(req, path)
+	resp, err := client.conn.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("resp status not 200,content:%s", string(content))
+	}
+	return content, nil
+}
+
 func (client *Client) post(path string, reqBody []byte) ([]byte, error) {
 	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("POST", host+path, bytes.NewReader(reqBody))
@@ -135,7 +161,7 @@ func (client *Client) post(path string, reqBody []byte) ([]byte, error) {
 	return content, nil
 }
 
-func (client *Client) CreateService(service Service) error {
+func (client *Client) CreateService(service entity.Service) error {
 	_, err := client.get(fmt.Sprintf("/2016-08-15/services/%s", service.ServiceName))
 	if err == nil {
 		return nil
@@ -150,21 +176,42 @@ func (client *Client) CreateService(service Service) error {
 	}
 	return nil
 }
+func (client *Client) GetFunction(serviceName string, functionName string) (function *entity.Function, err error) {
+	data, err := client.get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName))
+	json.Unmarshal(data, function)
+	return
+}
 
-func (client *Client) CreateFunction(serviceName string, function Function) error {
-	_, err := client.get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
-	if err == nil {
-		err = client.delete(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName))
-		if err != nil {
-			return err
-		}
-	}
-
+func (client *Client) CreateFunction(serviceName string, function entity.Function) error {
 	reqBody, err := json.Marshal(function)
 	if err != nil {
 		return err
 	}
 	_, err = client.post(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (client *Client) UpdateFunction(serviceName string, function entity.Function) error {
+
+	updateFunctionFields := struct {
+		Code        entity.Code `json:"code"`
+		Description string      `json:"description"`
+		MemorySize  int         `json:"memorySize"`
+		Timeout     int         `json:"timeout"`
+	}{
+		Code:        function.Code,
+		Description: function.Description,
+		MemorySize:  function.MemorySize,
+		Timeout:     function.Timeout,
+	}
+	reqBody, err := json.Marshal(updateFunctionFields)
+	if err != nil {
+		return err
+	}
+	_, err = client.put(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
 	if err != nil {
 		return err
 	}

@@ -55,7 +55,7 @@ def wait_for_listen(port):
 
 
 def read_config():
-    with open('ha.yml', 'r') as f:
+    with open('qi.yml', 'r') as f:
         config = dict()
         for l in f.readlines():
             key, v = l.split(':')

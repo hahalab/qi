@@ -11,15 +11,16 @@ import (
 	"github.com/tj/go-spin"
 	"github.com/hahalab/qi/aliyun"
 	"github.com/hahalab/qi/archive"
-	"github.com/hahalab/qi/build"
+	"github.com/hahalab/qi/builder"
 	"github.com/hahalab/qi/config"
+	"github.com/hahalab/qi/app"
 )
 
 func qi(c *cli.Context) error {
 	message := newMessager()
 	message <- "Preparing"
 
-	if err := config.MustParseUpConfig(c); err != nil {
+	if err := config.MustParseConfig(c); err != nil {
 		return err
 	}
 
@@ -35,7 +36,7 @@ func qi(c *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	build, err := build.NewBuilder(aliClient)
+	build, err := builder.NewBuilder(aliClient)
 	if err != nil {
 		return err
 	}
@@ -80,12 +81,12 @@ func onlyDeploy(c *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	build, err := build.NewBuilder(aliClient)
+	build, err := builder.NewBuilder(aliClient)
 	if err != nil {
 		return err
 	}
 
-	err = build.Deploy(conf.Name, conf.Role, message)
+	err = build.Deploy(app.NewApp(&conf), message)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -94,7 +95,7 @@ func onlyDeploy(c *cli.Context) error {
 }
 
 func newMessager() chan string {
-	hintMessage := make(chan string, 1)
+	m := make(chan string, 1)
 	go func(m chan string) {
 		s := spin.New()
 
@@ -110,6 +111,6 @@ func newMessager() chan string {
 			}
 		}
 
-	}(hintMessage)
-	return hintMessage
+	}(m)
+	return m
 }

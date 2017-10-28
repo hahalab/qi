@@ -1,4 +1,4 @@
-package aliyun
+package entity
 
 type Service struct {
 	Description string    `json:"description"`
@@ -31,6 +31,19 @@ type APIGroup struct {
 	Description string
 }
 
+type APIGroupAttribute struct {
+	GroupId       string
+	GroupName     string
+	SubDomain     string
+	Description   string
+	CreatedTime   string
+	ModifiedTime  string
+	RegionId      string
+	TrafficLimit  string
+	BillingStatus string
+	IllegalStatus string
+}
+
 type APIGateway struct {
 	RegionId             string
 	GroupId              string
@@ -47,6 +60,18 @@ type APIGateway struct {
 	ResultSample         string
 	FailResultSample     string
 	ErrorCodeSamples     []string
+}
+
+type APISummary struct {
+	RegionId     string
+	GroupId      string
+	ApiId        string
+	GroupName    string
+	ApiName      string
+	Visibility   string
+	Description  string
+	CreatedTime  string
+	ModifiedTime string
 }
 
 type ServiceConfig struct {

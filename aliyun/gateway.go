@@ -9,6 +9,8 @@ import (
 	"net"
 	"strconv"
 	"github.com/denverdino/aliyungo/util"
+	"github.com/hahalab/qi/aliyun/entity"
+	"encoding/json"
 )
 
 type ApiGatewayClient struct {
@@ -94,7 +96,38 @@ type CreateGroupResp struct {
 
 // API Gateway
 
-func (client *ApiGatewayClient) CreateAPIGroup(group APIGroup) error {
+func (client *ApiGatewayClient) GetAPIGroup(groupName string) (groupAttribute *entity.APIGroupAttribute, err error) {
+	req := struct {
+		GroupName string
+	}{
+		GroupName: groupName,
+	}
+	data, err := client.get("DescribeApiGroups", req)
+	if err != nil {
+		return
+	}
+	res := struct {
+		RequestId          string
+		TotalCount         string
+		PageSize           string
+		PageNumber         string
+		ApiGroupAttributes []entity.APIGroupAttribute
+	}{}
+
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return
+	}
+	for _, ga := range res.ApiGroupAttributes {
+		if ga.GroupName == groupName {
+			groupAttribute = &ga
+			break
+		}
+	}
+	return
+}
+
+func (client *ApiGatewayClient) CreateAPIGroup(group entity.APIGroup) error {
 	result, err := client.get("CreateApiGroup", group)
 	fmt.Printf("%s", result)
 	if err != nil {
@@ -103,7 +136,40 @@ func (client *ApiGatewayClient) CreateAPIGroup(group APIGroup) error {
 	return nil
 }
 
-func (client *ApiGatewayClient) CreateAPIGateway(api APIGateway) error {
+func (client *ApiGatewayClient) GetAPIGateway(groupId string, apiName string) (apiSummary *entity.APISummary, err error) {
+	req := struct {
+		GroupId string
+		ApiName string
+	}{
+		GroupId: groupId,
+		ApiName: apiName,
+	}
+	data, err := client.get("DescribeApis", req)
+	if err != nil {
+		return
+	}
+	res := struct {
+		RequestId   string
+		TotalCount  string
+		PageSize    string
+		PageNumber  string
+		ApiSummarys []entity.APISummary
+	}{}
+
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return
+	}
+	for _, api := range res.ApiSummarys {
+		if api.GroupId == groupId && api.ApiName == apiName {
+			apiSummary = &api
+			break
+		}
+	}
+	return
+}
+
+func (client *ApiGatewayClient) CreateAPIGateway(api entity.APIGateway) error {
 	result, err := client.get("CreateApi", api)
 	fmt.Printf("%s", result)
 	if err != nil {

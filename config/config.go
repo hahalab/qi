@@ -38,10 +38,12 @@ type Config struct {
 }
 
 type CodeConfig struct {
-	Name    string `yaml:"name"`
-	Command string `yaml:"command"`
-	Build   string `yaml:"build"`
-	Files   string `yaml:"files"`
+	Name       string `yaml:"name"`
+	Command    string `yaml:"command"`
+	Build      string `yaml:"build"`
+	Files      string `yaml:"files"`
+	MemorySize int    `yaml:"memorysize"`
+	Timeout    int    `yaml:"timeout"`
 }
 
 func (c CodeConfig) String() string {
@@ -102,12 +104,12 @@ func LoadQiConfig(path string, qiConfig *Config) (err error) {
 func LoadCodeConfig(path string, codeConfig *CodeConfig) (err error) {
 	file, err := ioutil.ReadFile(path)
 	if err == nil {
-		err = json.Unmarshal(file, codeConfig)
+		err = yaml.Unmarshal(file, codeConfig)
 	}
 	return
 }
 
-func MustParseUpConfig(ctx *cli.Context) error {
+func MustParseConfig(ctx *cli.Context) error {
 	config.CodePath = ctx.String(FlagCodePath)
 	err := env.Decode(&(config.CommonConf))
 	if err != nil {
@@ -124,7 +126,7 @@ func MustParseUpConfig(ctx *cli.Context) error {
 		return err
 	}
 
-	err = LoadCodeConfig(config.CodePath+"/ha.yml", &(config.CodeConfig))
+	err = LoadCodeConfig(config.CodePath+"/qi.yml", &(config.CodeConfig))
 	if err != nil {
 		return err
 	}

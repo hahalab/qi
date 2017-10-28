@@ -5,6 +5,7 @@ import (
 	"github.com/hahalab/qi/config"
 	"os/user"
 	"github.com/sirupsen/logrus"
+	"github.com/hahalab/qi/aliyun/entity"
 )
 
 func newCli() *Client {
@@ -24,11 +25,11 @@ func newCli() *Client {
 
 func Test_CreateService(t *testing.T) {
 	cli := newCli()
-	err := cli.CreateService(Service{
+	err := cli.CreateService(entity.Service{
 		Description: "testapi",
 		Role:        "acs:ram::1759916402662922:role/fc-logs",
 		ServiceName: "theapitest",
-		LogConfig: LogConfig{
+		LogConfig: entity.LogConfig{
 			Logstore: "fc-store",
 			Project:  "fc-store-test-it",
 		},
@@ -48,7 +49,7 @@ func Test_CreateLog(t *testing.T) {
 
 func Test_CreateAPIGatewayGroup(t *testing.T) {
 	cli := newCli()
-	err := cli.apiCli.CreateAPIGroup(APIGroup{
+	err := cli.CreateAPIGroup(entity.APIGroup{
 		GroupName:   "qitest",
 		Description: "qi test",
 	})
@@ -59,14 +60,14 @@ func Test_CreateAPIGatewayGroup(t *testing.T) {
 
 func Test_APIGateway(t *testing.T) {
 	cli := newCli()
-	err := cli.apiCli.CreateAPIGateway(APIGateway{
+	err := cli.CreateAPIGateway(entity.APIGateway{
 		RegionId:    "cn-shanghai",
 		GroupId:     "fb64de791f7a4c708e7a97a2c5e7172d",
 		ApiName:     "qitest",
 		Visibility:  "PRIVATE",
 		Description: "qitest",
 		AuthType:    "ANONYMOUS",
-		RequestConfig: RequestConfig{
+		RequestConfig: entity.RequestConfig{
 			RequestProtocol:     "HTTP,HTTPS",
 			RequestHttpMethod:   "PATCH",
 			RequestPath:         "/",
@@ -74,7 +75,7 @@ func Test_APIGateway(t *testing.T) {
 			PostBodyDescription: "",
 			RequestMode:         "PASSTHROUGH",
 		},
-		ServiceConfig: ServiceConfig{
+		ServiceConfig: entity.ServiceConfig{
 			ServiceProtocol:   "FunctionCompute",
 			ServiceHttpMethod: "GET",
 			ServiceAddress:    "",
@@ -84,7 +85,7 @@ func Test_APIGateway(t *testing.T) {
 			MockResult:        "",
 			ServiceVpcEnable:  "FALSE",
 			VpcConfig:         struct{}{},
-			FunctionComputeConfig: FunctionComputeConfig{
+			FunctionComputeConfig: entity.FunctionComputeConfig{
 				FcRegionId:          "cn-shanghai",
 				ServiceName:         "test",
 				FunctionName:        "testyaml",
