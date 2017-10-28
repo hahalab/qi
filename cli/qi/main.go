@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/todaychiji/ha/conf"
+	"github.com/hahalab/qi/conf"
 )
 
 func main() {

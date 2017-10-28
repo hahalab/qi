@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/sakeven/go-env"
 	"github.com/sirupsen/logrus"
-	"github.com/todaychiji/ha/aliyun"
+	"github.com/hahalab/qi/aliyun"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )

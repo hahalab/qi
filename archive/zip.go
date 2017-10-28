@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/todaychiji/ha/conf"
+	"github.com/hahalab/qi/conf"
 )
 
 // Build 把目录打包成 cwd()/code.zip

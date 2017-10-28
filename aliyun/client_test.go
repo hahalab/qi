@@ -47,11 +47,3 @@ func Test_CreateLog(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-func Test_DeleteFunc(t *testing.T) {
-	cli := newCli()
-	err := cli.DeleteFunction("oss_demo", "fc-oss")
-	if err != nil {
-		t.Fatal(err)
-	}
-}

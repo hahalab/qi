@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/sirupsen/logrus"
-	"github.com/todaychiji/ha/conf"
+	"github.com/hahalab/qi/conf"
 )
 
 type oss interface {

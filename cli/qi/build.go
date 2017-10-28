@@ -9,10 +9,10 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/tj/go-spin"
-	"github.com/todaychiji/ha/aliyun"
-	"github.com/todaychiji/ha/archive"
-	"github.com/todaychiji/ha/build"
-	"github.com/todaychiji/ha/conf"
+	"github.com/hahalab/qi/aliyun"
+	"github.com/hahalab/qi/archive"
+	"github.com/hahalab/qi/build"
+	"github.com/hahalab/qi/conf"
 )
 
 func qi(c *cli.Context) error {

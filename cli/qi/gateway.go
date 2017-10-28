@@ -8,9 +8,9 @@ import (
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
 
-	"github.com/todaychiji/ha/aliyun"
-	"github.com/todaychiji/ha/conf"
-	"github.com/todaychiji/ha/gateway"
+	"github.com/hahalab/qi/aliyun"
+	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/gateway"
 )
 
 func gatewayInit(c *cli.Context) {

@@ -1,6 +1,6 @@
 FROM golang:1.9.1
 
-ADD . /go/src/github.com/todaychiji/ha
-RUN go install github.com/todaychiji/ha/cli/qi
+ADD . /go/src/github.com/hahalab/qi
+RUN go install github.com/hahalab/qi/cli/qi
 
 ENTRYPOINT ["qi", "gateway"]

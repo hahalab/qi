@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 
 	"github.com/sirupsen/logrus"
-	"github.com/todaychiji/ha/aliyun"
-	"github.com/todaychiji/ha/archive"
-	"github.com/todaychiji/ha/conf"
+	"github.com/hahalab/qi/aliyun"
+	"github.com/hahalab/qi/archive"
+	"github.com/hahalab/qi/conf"
 )
 
 type Builder struct {

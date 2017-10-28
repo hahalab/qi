@@ -7,7 +7,7 @@ export installsuffix=cgo
 ## keel ##
 .PHONY: build
 build: $(shell find . -name '*.go') .git
-	go install -ldflags "-X main.version=${VERSION}" github.com/todaychiji/ha/cli/qi
+	go install -ldflags "-X main.version=${VERSION}" github.com/hahalab/qi/cli/qi
 
 .PHONY: run
 run: build
@@ -20,4 +20,4 @@ server: build
 
 .PHONY: test
 test:
-	go test -v github.com/todaychiji/ha/...
+	go test -v github.com/hahalab/qi/...

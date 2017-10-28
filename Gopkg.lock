@@ -20,12 +20,6 @@
   version = "v7"
 
 [[projects]]
-  name = "github.com/astaxie/beego"
-  packages = [".","config","context","context/param","grace","logs","session","toolbox","utils"]
-  revision = "d96289a81bf67728cff7a19b067aaecc65a62ec6"
-  version = "v1.9.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/cloudflare/golz4"
   packages = ["."]
@@ -69,18 +63,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/gopherjs/gopherjs"
-  packages = ["js"]
-  revision = "a0a7cfed7b2a54080888fd2b3d4a3ec14562c86c"
-
-[[projects]]
-  name = "github.com/jtolds/gls"
-  packages = ["."]
-  revision = "77f18212c9c7edc9bd6a33d383a7b545ce62f064"
-  version = "v4.2.1"
-
-[[projects]]
-  branch = "master"
   name = "github.com/sakeven/go-env"
   packages = ["."]
   revision = "1b83f6db4c5c2c25ef8a33ad6264edb69381d5d4"
@@ -90,18 +72,6 @@
   packages = ["."]
   revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
   version = "v1.0.3"
-
-[[projects]]
-  name = "github.com/smartystreets/assertions"
-  packages = [".","internal/go-render/render","internal/oglematchers"]
-  revision = "ff1918e1e5a13a74014644ae7c1e0ba2f791364d"
-  version = "1.8.0"
-
-[[projects]]
-  name = "github.com/smartystreets/goconvey"
-  packages = ["convey","convey/gotest","convey/reporting"]
-  revision = "9e8dc3f972df6c8fcc0375ef492c24d0bb204857"
-  version = "1.6.3"
 
 [[projects]]
   name = "github.com/tj/go-spin"
@@ -142,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0649fc254ad693776e0dcd2b48da8d4b87c176a24c91931fc5975a65efb7cf76"
+  inputs-digest = "7ed6ffd1e8d893aa6f2266a31b111aa8ad0923c1d8fb15ac545e730e1a30c176"
   solver-name = "gps-cdcl"
   solver-version = 1
