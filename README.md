@@ -17,7 +17,7 @@ NOTICE
 
 因为阿里云 API Gateway 与 AWS 不同，route path 匹配规则非常简陋
 
-比如在 AWS API 网关可以创建 '/' 与 '/ping' 两个路径，访问 '/pong' 会匹配到 '/'
+比如在 AWS API 网关可以创建 '/{proxy+}' 与 '/ping' 两个路径，访问 '/pong' 会匹配到 '/{proxy+}'
 
 而 阿里云 API 网关只可以做简单的直接匹配，如创建 '/' 与 '/ping' 两个路径，访问 '/pong' 会匹配失败，所以无法对后台的 Web 服务透传 path
 
