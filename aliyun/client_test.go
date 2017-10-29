@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"github.com/sirupsen/logrus"
 	"github.com/hahalab/qi/aliyun/entity"
+	"fmt"
 )
 
 func newCli() *Client {
@@ -53,6 +54,15 @@ func Test_CreateAPIGatewayGroup(t *testing.T) {
 		GroupName:   "qitest",
 		Description: "qi test",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_GetAPIGatewayGroup(t *testing.T) {
+	cli := newCli()
+	group, err := cli.GetAPIGroup("qitest")
+	t.Logf("%+v", group)
 	if err != nil {
 		t.Fatal(err)
 	}

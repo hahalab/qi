@@ -39,7 +39,7 @@ type APIGroupAttribute struct {
 	CreatedTime   string
 	ModifiedTime  string
 	RegionId      string
-	TrafficLimit  string
+	TrafficLimit  int
 	BillingStatus string
 	IllegalStatus string
 }
@@ -105,20 +105,18 @@ type FunctionComputeConfig struct {
 	ContentTypeValue    string
 }
 
-//RegionId:cn-shanghai
-//GroupId:fb64de791f7a4c708e7a97a2c5e7172d
-//ApiName:haha
-//Visibility:PRIVATE
-//Description:dfg
-//AuthType:ANONYMOUS
-//RequestConfig:{"RequestProtocol":"HTTP,HTTPS","RequestHttpMethod":"GET","RequestPath":"/","BodyFormat":"","PostBodyDescription":"","RequestMode":"PASSTHROUGH"}
-//ServiceConfig:{"ServiceProtocol":"FunctionCompute","ServiceHttpMethod":"GET","ServiceAddress":"","ServiceTimeout":"500","ServicePath":"/","Mock":"FALSE","MockResult":"","ServiceVpcEnable":"FALSE","VpcConfig":{},"FunctionComputeConfig":{"FcRegionId":"cn-shanghai","ServiceName":"test","FunctionName":"testyaml","RoleArn":"acs:ram::1896697416215058:role/aliyunapigatewayaccessingfcrole"},"ContentTypeCatagory":"CLIENT","ContentTypeValue":""}
-//RequestParamters:[]
-//ServiceParameters:[]
-//ServiceParametersMap:[]
-//ResultType:PASSTHROUGH
-//ResultSample:asd
-//FailResultSample:asd
-//ErrorCodeSamples:[]
-//OpenIdConnectConfig:undefined
-//secToken:4KukFEU1WrMNwt79UFAfAC
+// Policy
+type AssumeRolePolicyDocument struct {
+	Statement []AssumeRolePolicyItem
+	Version   string
+}
+
+type AssumeRolePolicyItem struct {
+	Action    string
+	Effect    string
+	Principal AssumeRolePolicyPrincpal
+}
+
+type AssumeRolePolicyPrincpal struct {
+	Service []string
+}

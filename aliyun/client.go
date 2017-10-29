@@ -22,11 +22,12 @@ type Client struct {
 	ossCli *oss.Client
 	logCli *sls.Client
 	*ApiGatewayClient
+	*RoleClient
 }
 
 func NewClient(config *config.AliyunConfig) (*Client, error) {
 	cli := http.Client{
-		Timeout: time.Second * 20,
+		Timeout: time.Second * 120,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
 				Timeout:   20 * time.Second,
@@ -36,7 +37,6 @@ func NewClient(config *config.AliyunConfig) (*Client, error) {
 			MaxIdleConns:          50,
 			IdleConnTimeout:       120 * time.Second,
 			TLSHandshakeTimeout:   12 * time.Second,
-			ExpectContinueTimeout: 2 * time.Second,
 			ResponseHeaderTimeout: 12 * time.Second,
 		},
 	}
@@ -54,17 +54,23 @@ func NewClient(config *config.AliyunConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	roleCli, err := NewRoleClient(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
 		conn:             &cli,
 		config:           config,
 		ossCli:           ossCli,
 		logCli:           logCli,
 		ApiGatewayClient: apiCLi,
+		RoleClient:       roleCli,
 	}, nil
 }
 
 func (client *Client) get(path string) ([]byte, error) {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	host := fmt.Sprintf("https://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("GET", host+path, nil)
 	if err != nil {
 		return nil, err
@@ -88,7 +94,7 @@ func (client *Client) get(path string) ([]byte, error) {
 }
 
 func (client *Client) delete(path string) error {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	host := fmt.Sprintf("https://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("DELETE", host+path, nil)
 	if err != nil {
 		return err
@@ -112,7 +118,7 @@ func (client *Client) delete(path string) error {
 }
 
 func (client *Client) put(path string, reqBody []byte) ([]byte, error) {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	host := fmt.Sprintf("https://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("PUT", host+path, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -137,7 +143,7 @@ func (client *Client) put(path string, reqBody []byte) ([]byte, error) {
 }
 
 func (client *Client) post(path string, reqBody []byte) ([]byte, error) {
-	host := fmt.Sprintf("http://%s.%s", client.config.AccountID, client.config.FcEndPoint)
+	host := fmt.Sprintf("https://%s.%s", client.config.AccountID, client.config.FcEndPoint)
 	req, err := http.NewRequest("POST", host+path, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -176,9 +182,12 @@ func (client *Client) CreateService(service entity.Service) error {
 	}
 	return nil
 }
-func (client *Client) GetFunction(serviceName string, functionName string) (function *entity.Function, err error) {
+func (client *Client) GetFunction(serviceName string, functionName string) (function entity.Function, err error) {
 	data, err := client.get(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, functionName))
-	json.Unmarshal(data, function)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &function)
 	return
 }
 
@@ -211,7 +220,7 @@ func (client *Client) UpdateFunction(serviceName string, function entity.Functio
 	if err != nil {
 		return err
 	}
-	_, err = client.put(fmt.Sprintf("/2016-08-15/services/%s/functions", serviceName), reqBody)
+	_, err = client.put(fmt.Sprintf("/2016-08-15/services/%s/functions/%s", serviceName, function.FunctionName), reqBody)
 	if err != nil {
 		return err
 	}

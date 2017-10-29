@@ -96,7 +96,7 @@ type CreateGroupResp struct {
 
 // API Gateway
 
-func (client *ApiGatewayClient) GetAPIGroup(groupName string) (groupAttribute *entity.APIGroupAttribute, err error) {
+func (client *ApiGatewayClient) GetAPIGroup(groupName string) (groupAttribute entity.APIGroupAttribute, err error) {
 	req := struct {
 		GroupName string
 	}{
@@ -106,21 +106,24 @@ func (client *ApiGatewayClient) GetAPIGroup(groupName string) (groupAttribute *e
 	if err != nil {
 		return
 	}
+
 	res := struct {
-		RequestId          string
-		TotalCount         string
-		PageSize           string
-		PageNumber         string
-		ApiGroupAttributes []entity.APIGroupAttribute
+		RequestId  string
+		TotalCount int
+		PageSize   int
+		PageNumber int
+		ApiGroupAttributes struct {
+			ApiGroupAttribute []entity.APIGroupAttribute
+		}
 	}{}
 
-	err = json.Unmarshal(data, res)
+	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return
 	}
-	for _, ga := range res.ApiGroupAttributes {
+	for _, ga := range res.ApiGroupAttributes.ApiGroupAttribute {
 		if ga.GroupName == groupName {
-			groupAttribute = &ga
+			groupAttribute = ga
 			break
 		}
 	}
@@ -150,13 +153,13 @@ func (client *ApiGatewayClient) GetAPIGateway(groupId string, apiName string) (a
 	}
 	res := struct {
 		RequestId   string
-		TotalCount  string
-		PageSize    string
-		PageNumber  string
+		TotalCount  int
+		PageSize    int
+		PageNumber  int
 		ApiSummarys []entity.APISummary
 	}{}
 
-	err = json.Unmarshal(data, res)
+	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return
 	}

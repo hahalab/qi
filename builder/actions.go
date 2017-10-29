@@ -7,6 +7,8 @@ import (
 	"github.com/hahalab/qi/archive"
 	"github.com/hahalab/qi/config"
 	"github.com/hahalab/qi/app"
+	"github.com/hahalab/qi/aliyun/entity"
+	"fmt"
 )
 
 func (b Builder) Build(path string, m chan string) (err error) {
@@ -21,13 +23,20 @@ func (b Builder) Build(path string, m chan string) (err error) {
 func (b Builder) Prepare(app *app.App, m chan string) (err error) {
 	m <- "Preparing"
 
+	role, err := b.EnsureRole(app.Role())
+	if err != nil {
+		return
+	}
 	err = b.EnsureLogStore(app.ProjectName(), app.StoreName())
 	if err != nil {
 		return
 	}
-
-	err = b.EnsureService(app.Service())
-
+	service := app.Service()
+	service.Role = role.Arn
+	err = b.EnsureService(service)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
@@ -51,14 +60,19 @@ func (b Builder) Deploy(app *app.App, m chan string) error {
 	return nil
 }
 
-func (b Builder) Configuration(app *app.App, m chan string) (err error) {
+func (b Builder) Configuration(app *app.App, m chan string) (groupAttribute entity.APIGroupAttribute, err error) {
 	m <- "Configuration"
-	groupAttribute, err := b.EnsureAPIGroup(app.APIGroup())
+
+	role, err := b.EnsureRole(app.Role())
+	if err != nil {
+		return
+	}
+	groupAttribute, err = b.EnsureAPIGroup(app.APIGroup())
 	if err != nil {
 		return
 	}
 
-	for _, apiGateway := range app.APIGateways(groupAttribute.GroupId) {
+	for _, apiGateway := range app.APIGateways(groupAttribute.GroupId, role.Arn) {
 		err = b.EnsureAPIGateway(groupAttribute.GroupId, apiGateway)
 		if err != nil {
 			return
@@ -75,7 +89,6 @@ func (b Builder) Qi(m chan string) error {
 	if err := b.Build(c.CodePath, m); err != nil {
 		return err
 	}
-
 	if err := b.Prepare(app, m); err != nil {
 		return err
 	}
@@ -84,8 +97,12 @@ func (b Builder) Qi(m chan string) error {
 		return err
 	}
 
-	if err := b.Configuration(app, m); err != nil {
+	groupAttribute, err := b.Configuration(app, m)
+	if err != nil {
 		return err
 	}
+
+	m <- "Done"
+	fmt.Printf("部署成功！请访问如下子域名:\n%s\n", groupAttribute.SubDomain)
 	return nil
 }

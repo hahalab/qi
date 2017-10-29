@@ -5,6 +5,9 @@ import (
 	"github.com/hahalab/qi/aliyun/entity"
 	"fmt"
 	"strconv"
+	"github.com/denverdino/aliyungo/ram"
+	"encoding/json"
+	"strings"
 )
 
 type App struct {
@@ -12,7 +15,7 @@ type App struct {
 }
 
 func (app *App) description() string {
-	return fmt.Sprintf("%s is deployed by QI, don't manually modified", app.Name())
+	return fmt.Sprintf("%s 由 QI 自动创建, 请避免手动更改", app.Name())
 }
 
 func NewApp(c *config.Config) (*App) {
@@ -52,7 +55,6 @@ func (app *App) Service() (entity.Service) {
 	return entity.Service{
 		ServiceName: serviceName,
 		Description: app.description(),
-		Role:        "",
 		LogConfig: entity.LogConfig{
 			Project:  app.ProjectName(),
 			Logstore: app.StoreName(),
@@ -60,8 +62,27 @@ func (app *App) Service() (entity.Service) {
 	}
 }
 
-func (app *App) Role() string {
-	return ""
+func (app *App) Role() ram.Role {
+	assumeRolePolicyDocument := entity.AssumeRolePolicyDocument{
+		Statement: []entity.AssumeRolePolicyItem{
+			{
+				Action: "sts:AssumeRole",
+				Effect: "Allow",
+				Principal: entity.AssumeRolePolicyPrincpal{
+					Service: []string{
+						"fc.aliyuncs.com",
+					},
+				},
+			},
+		},
+		Version: "1",
+	}
+	assumeRolePolicyDocumentJson, _ := json.Marshal(assumeRolePolicyDocument)
+	return ram.Role{
+		RoleName:                 app.Name(),
+		AssumeRolePolicyDocument: string(assumeRolePolicyDocumentJson),
+		Description:              "role is created by QI, 如需调整访问权限请保证角色 Arn 不变, 否则会重新创建",
+	}
 }
 
 func (app *App) Function() (entity.Function) {
@@ -78,20 +99,20 @@ func (app *App) Function() (entity.Function) {
 
 func (app *App) APIGroup() (entity.APIGroup) {
 	return entity.APIGroup{
-		GroupName:   fmt.Sprintf("%s-apigroup", app.Name()),
+		GroupName:   strings.Replace(fmt.Sprintf("%s-apigroup", app.Name()), "-", "_", -1),
 		Description: app.description(),
 	}
 }
 
-func (app *App) APIGateways(groupId string) ([]entity.APIGateway) {
-	return []entity.APIGateway{app.generateAPIGateway(groupId, "GET")}
+func (app *App) APIGateways(groupId string, roleArn string) ([]entity.APIGateway) {
+	return []entity.APIGateway{app.generateAPIGateway(groupId, "GET", roleArn)}
 }
 
-func (app *App) generateAPIGateway(groupId string, method string) (entity.APIGateway) {
+func (app *App) generateAPIGateway(groupId string, method string, roleArn string) (entity.APIGateway) {
 	return entity.APIGateway{
 		RegionId:    app.RegionId(),
 		GroupId:     groupId,
-		ApiName:     fmt.Sprintf("%s-%s", app.Name(), method),
+		ApiName:     strings.Replace(fmt.Sprintf("%s-%s", app.Name(), method), "-", "_", -1),
 		Visibility:  "PRIVATE",
 		Description: app.description(),
 		AuthType:    "ANONYMOUS",
@@ -117,7 +138,7 @@ func (app *App) generateAPIGateway(groupId string, method string) (entity.APIGat
 				FcRegionId:          app.RegionId(),
 				ServiceName:         app.Service().ServiceName,
 				FunctionName:        app.Function().FunctionName,
-				RoleArn:             app.Role(),
+				RoleArn:             roleArn,
 				ContentTypeCatagory: "CLIENT",
 				ContentTypeValue:    ""},
 		},

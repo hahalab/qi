@@ -3,8 +3,7 @@ package builder
 import (
 	"github.com/hahalab/qi/aliyun"
 	"github.com/hahalab/qi/aliyun/entity"
-	"io/ioutil"
-	"encoding/base64"
+	"github.com/denverdino/aliyungo/ram"
 )
 
 type Builder struct {
@@ -26,15 +25,9 @@ func (b *Builder) EnsureService(service entity.Service) (err error) {
 }
 
 func (b *Builder) DeployFunction(serviceName string, function entity.Function) (err error) {
-	file, err := ioutil.ReadFile("code.zip")
-	if err != nil {
-		return err
-	}
-
-	function.Code.ZipFile = base64.StdEncoding.EncodeToString(file)
-
 	existsFunction, err := b.client.GetFunction(serviceName, function.FunctionName)
-	if err != nil || existsFunction == nil {
+
+	if existsFunction.FunctionName == "" {
 		err = b.client.CreateFunction(serviceName, function)
 	} else {
 		err = b.client.UpdateFunction(serviceName, function)
@@ -47,9 +40,9 @@ func (b *Builder) DeployFunction(serviceName string, function entity.Function) (
 	return nil
 }
 
-func (b *Builder) EnsureAPIGroup(group entity.APIGroup) (groupAttribute *entity.APIGroupAttribute, err error) {
+func (b *Builder) EnsureAPIGroup(group entity.APIGroup) (groupAttribute entity.APIGroupAttribute, err error) {
 	groupAttribute, err = b.client.GetAPIGroup(group.GroupName)
-	if groupAttribute != nil && err == nil {
+	if groupAttribute.GroupId != "" {
 		return
 	}
 	err = b.client.CreateAPIGroup(group)
@@ -66,5 +59,29 @@ func (b *Builder) EnsureAPIGateway(groupId string, api entity.APIGateway) (err e
 		return
 	}
 	err = b.client.CreateAPIGateway(api)
+	return
+}
+
+func (b *Builder) EnsureRole(r ram.Role) (role ram.Role, err error) {
+	role, err = b.client.GetRole(r.RoleName)
+	if role.RoleId != "" && err == nil {
+		return
+	}
+	role, err = b.client.CreateRole(r.RoleName, r.AssumeRolePolicyDocument, r.Description)
+	if err != nil {
+		return
+	}
+
+	// grant policies
+	for _, policyName := range []string{
+		"AliyunRDSFullAccess",
+		"AliyunMongoDBFullAccess",
+		"AliyunApiGatewayFullAccess",
+		"AliyunLogFullAccess"} {
+		_, err := b.client.AttachPolicyToRole(role.RoleName, policyName, "System")
+		if err != nil {
+			return role, err
+		}
+	}
 	return
 }
