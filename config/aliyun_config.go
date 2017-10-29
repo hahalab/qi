@@ -1,6 +1,6 @@
-package aliyun
+package config
 
-type Config struct {
+type AliyunConfig struct {
 	AccessKeyID     string `validate:"required" env:"ACCESS_KEY"`
 	AccessKeySecret string `validate:"required" env:"ACCESS_SECRET"`
 	AccountID       string `validate:"required" env:"ACCOUNT_ID"`
@@ -10,4 +10,7 @@ type Config struct {
 	LogEndPoint     string `validate:"required" env:"LOG_ENDPOINT,cn-beijing.log.aliyuncs.com"`
 	ApiEndPoint     string `validate:"required" env:"LOG_ENDPOINT,apigateway.cn-beijing.aliyuncs.com"`
 	Role            string `validate:"required" env:"ROLE"`
+	RegionId        string `validate:"required" env:"REGION_ID"`
+	APIGroup        string
+	APIName         string
 }

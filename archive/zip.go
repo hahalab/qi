@@ -6,16 +6,18 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"io/ioutil"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
+	"encoding/json"
 )
 
 // Build 把目录打包成 cwd()/code.zip
 func Build(dir string, hintMessage chan string) error {
-	c, err := conf.LoadConfig(path.Join(dir, "ha.yml"))
+	c, err := config.LoadConfig(path.Join(dir, "qi.yml"))
 	if err != nil || c == nil {
 		return err
 	}
@@ -24,6 +26,22 @@ func Build(dir string, hintMessage chan string) error {
 	if err := executeBuild(dir, *c); err != nil {
 		return err
 	}
+
+	// create qi.json for fc proxy
+	qiJsonPath := path.Join(dir, "qi.json")
+	qiJson, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(qiJsonPath, qiJson, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := os.Remove(qiJsonPath); err != nil {
+			panic(err)
+		}
+	}()
 
 	output, err := os.Create("code.zip")
 	if err != nil {
@@ -41,12 +59,8 @@ func Build(dir string, hintMessage chan string) error {
 	}
 	hintMessage <- "Building"
 	// Write files to tw
-	var files []string
-	if c.Files != "" {
-		files = strings.Split(c.Files, ";")
-	} else {
-		files = append(files, dir)
-	}
+	files := c.Files
+	files = append(files, qiJsonPath)
 
 	for _, f := range files {
 		targetPath := path.Join(dir, f)
@@ -159,7 +173,7 @@ func injectDir(dir string, baseDir string, tw *zip.Writer) error {
 	return err
 }
 
-func executeBuild(dir string, c conf.CodeConfig) error {
+func executeBuild(dir string, c config.CodeConfig) error {
 
 	if c.Build == "" {
 		return nil

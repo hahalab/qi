@@ -1,222 +1,182 @@
 package aliyun
 
 import (
+	"fmt"
+	"time"
+	"io/ioutil"
+	"net/http"
+	"github.com/hahalab/qi/config"
+	"net"
+	"strconv"
+	"github.com/denverdino/aliyungo/util"
+	"github.com/hahalab/qi/aliyun/entity"
 	"encoding/json"
-	"regexp"
 )
 
-type createApiGateWayReq struct {
-	//bcc88ca511be4ad49f568268d67c1c00
-	GroupId string
-	ApiName string
-	//"PUBLIC"
-	Visibility  string
-	Description string
-	//"ANONYMOUS"
-	AuthType             string
-	RequestConfig        string
-	ServiceConfig        string
-	RequestParamters     string
-	ServiceParameters    string
-	ServiceParametersMap string
-	ResultType           string
-	ResultSample         string
-	FailResultSample     string
-	ErrorCodeSamples     string
+type ApiGatewayClient struct {
+	conn   *http.Client
+	config *config.AliyunConfig
 }
 
-type ServiceConfig struct {
-	ServiceProtocol       string
-	ServiceHttpMethod     string
-	ServiceAddress        string
-	ServiceTimeout        string
-	ServicePath           string
-	Mock                  string
-	MockResult            string
-	ServiceVpcEnable      string
-	VpcConfig             struct{}
-	FunctionComputeConfig FunctionComputeConfig
+var commonQueryParameter map[string]string = map[string]string{
+	"Format":           "JSON",
+	"Version":          "2016-07-14",
+	"SignatureMethod":  "HMAC-SHA1",
+	"SignatureVersion": "1.0",
 }
 
-type FunctionComputeConfig struct {
-	FcRegionId          string
-	ServiceName         string
-	RoleArn             string
-	FunctionName        string
-	ContentTypeCatagory string
-	ContentTypeValue    string
+func NewApiGatewayClient(config *config.AliyunConfig) (*ApiGatewayClient, error) {
+	cli := http.Client{
+		Timeout: time.Second * 20,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   20 * time.Second,
+				KeepAlive: 120 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          50,
+			IdleConnTimeout:       120 * time.Second,
+			TLSHandshakeTimeout:   12 * time.Second,
+			ExpectContinueTimeout: 2 * time.Second,
+			ResponseHeaderTimeout: 12 * time.Second,
+		},
+	}
+	return &ApiGatewayClient{
+		conn:   &cli,
+		config: config,
+	}, nil
 }
 
-type RequestConfig struct {
-	RequestProtocol     string
-	RequestHttpMethod   string
-	RequestPath         string
-	BodyFormat          string
-	RequestMode         string
-	PostBodyDescription string
-}
-type RequestParamters struct {
-	Required          string
-	ParameterType     string
-	ApiParameterName  string
-	DocShow           string
-	Location          string
-	DocOrder          int
-	ParameterCatalog  string
-	ParameterLocation ParameterLocation
-	IsHide            bool `json:"isHide"`
+func endpointURLFromRegionId(regionId string) string {
+	return fmt.Sprintf("https://apigateway.%s.aliyuncs.com", regionId)
 }
 
-type ParameterLocation struct {
-	Name        string `json:"name"`
-	OrderNumber int    `json:"orderNumber"`
+func (client *ApiGatewayClient) get(action string, api interface{}) ([]byte, error) {
+	endpoint := endpointURLFromRegionId(client.config.RegionId)
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	query := util.ConvertToQueryValues(api)
+	// merge common query parameters
+	for k, v := range commonQueryParameter {
+		query.Add(k, v)
+	}
+	query.Add("Timestamp", time.Now().UTC().Format(time.RFC3339))
+	query.Add("SignatureNonce", strconv.FormatInt(time.Now().UTC().UnixNano(), 10))
+	query.Add("AccessKeyId", client.config.AccessKeyID)
+	query.Add("Action", action)
+	signature := util.CreateSignatureForRequest("GET", &query, client.config.AccessKeySecret+"&")
+	query.Add("Signature", signature)
+	//build queries
+	req.URL.RawQuery = query.Encode()
+
+	resp, err := client.conn.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("resp status not 200,content:%s", string(content))
+	}
+	return content, nil
 }
 
-type ServiceParameters struct {
-	ServiceParameterName string
-	Location             string
-	Type                 string
-	ParameterCatalog     string
-}
-
-type ServiceParametersMap struct {
-	ServiceParameterName string
-	RequestParameterName string
-}
-
-type createApiGateWayResp struct {
-	RequestId string
-	ApiId     string
-}
-
-type deployApiGateWayReq struct {
-	GroupId     string
-	ApiId       string
-	StageName   string
-	Description string
-}
-type deployApiGateWayResp struct {
-	RequestId string
-}
-type createGroupReq struct {
-	GroupName   string
-	Description string
-}
-type createGroupResp struct {
+type CreateGroupResp struct {
 	GroupId     string
 	GroupName   string
 	SubDomain   string
 	Description string
 }
 
-func (client *Client) createGroup(groupName string) (*createGroupResp, error) {
-	var req createGroupReq = createGroupReq{
-		GroupName:   groupName,
-		Description: "fc gateway",
+// API Gateway
+
+func (client *ApiGatewayClient) GetAPIGroup(groupName string) (groupAttribute entity.APIGroupAttribute, err error) {
+	req := struct {
+		GroupName string
+	}{
+		GroupName: groupName,
 	}
-	var resp createGroupResp
-	err := client.commonCli.Invoke("CreateApi", req, &resp)
+	data, err := client.get("DescribeApiGroups", req)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return &resp, nil
+
+	res := struct {
+		RequestId  string
+		TotalCount int
+		PageSize   int
+		PageNumber int
+		ApiGroupAttributes struct {
+			ApiGroupAttribute []entity.APIGroupAttribute
+		}
+	}{}
+
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return
+	}
+	for _, ga := range res.ApiGroupAttributes.ApiGroupAttribute {
+		if ga.GroupName == groupName {
+			groupAttribute = ga
+			break
+		}
+	}
+	return
 }
 
-func (client *Client) createApiGateWay(method string, path string, serviceName string, functionName string, roleArn string, regionId string, groupId string) error {
-	reqConfigStr, _ := json.Marshal(RequestConfig{
-		RequestProtocol:     "HTTP",
-		RequestHttpMethod:   method,
-		RequestPath:         path,
-		BodyFormat:          "",
-		PostBodyDescription: "",
-		RequestMode:         "PASSTHROUGH",
-	})
-	serviceConfigStr, _ := json.Marshal(ServiceConfig{
-		ServiceProtocol:   "FunctionCompute",
-		ServiceHttpMethod: method,
-		ServiceAddress:    "",
-		ServiceTimeout:    "5000",
-		ServicePath:       "/",
-		Mock:              "FALSE",
-		MockResult:        "",
-		ServiceVpcEnable:  "FALSE",
-		VpcConfig:         struct{}{},
-		FunctionComputeConfig: FunctionComputeConfig{
-			FcRegionId:          regionId,
-			ServiceName:         serviceName,
-			RoleArn:             roleArn,
-			FunctionName:        functionName,
-			ContentTypeCatagory: "CLIENT",
-			ContentTypeValue:    "",
-		},
-	})
-	r, _ := regexp.Compile(`/\[(\w+)\]`)
-	parameters := r.FindAllString(path, -1)
-	rps := make([]RequestParamters, 0)
-	sps := make([]ServiceParameters, 0)
-	spms := make([]ServiceParametersMap, 0)
-	for i := range parameters {
-		para := parameters[i]
-		rp := RequestParamters{
-			Required:         "REQUIRED",
-			ParameterType:    "String",
-			ApiParameterName: para[2 : len(para)-1],
-			DocShow:          "PUBLIC",
-			Location:         "Path",
-			DocOrder:         0,
-			ParameterCatalog: "REQUEST",
-			IsHide:           false,
-			ParameterLocation: ParameterLocation{
-				Name:        "Parameter Path",
-				OrderNumber: 1,
-			},
-		}
-		sp := ServiceParameters{
-			ServiceParameterName: para,
-			Location:             "Path",
-			Type:                 "String",
-			ParameterCatalog:     "REQUEST",
-		}
-		spm := ServiceParametersMap{
-			ServiceParameterName: para,
-			RequestParameterName: para,
-		}
-		rps = append(rps, rp)
-		sps = append(sps, sp)
-		spms = append(spms, spm)
-	}
-	rpsStr, _ := json.Marshal(rps)
-	spsStr, _ := json.Marshal(sps)
-	spmsStr, _ := json.Marshal(spms)
-	var req createApiGateWayReq = createApiGateWayReq{
-		GroupId:              groupId,
-		ApiName:              serviceName + "-" + functionName,
-		Visibility:           "PUBLIC",
-		Description:          "thisisatest",
-		AuthType:             "ANONYMOUS",
-		RequestConfig:        string(reqConfigStr),
-		ServiceConfig:        string(serviceConfigStr),
-		RequestParamters:     string(rpsStr),
-		ServiceParameters:    string(spsStr),
-		ServiceParametersMap: string(spmsStr),
-		ResultType:           "JSON",
-		ResultSample:         `{"bodyParam":"testBody"}`,
-		FailResultSample:     `{"bodyParam":"testBody"}`,
-		ErrorCodeSamples:     "[]",
-	}
-	var resp createApiGateWayResp
-	err := client.commonCli.Invoke("CreateApi", req, &resp)
+func (client *ApiGatewayClient) CreateAPIGroup(group entity.APIGroup) error {
+	result, err := client.get("CreateApiGroup", group)
+	fmt.Printf("%s", result)
 	if err != nil {
 		return err
 	}
-	var deployReq deployApiGateWayReq = deployApiGateWayReq{
-		GroupId:     groupId,
-		ApiId:       resp.ApiId,
-		StageName:   "RELEASE",
-		Description: "test",
+	return nil
+}
+
+func (client *ApiGatewayClient) GetAPIGateway(groupId string, apiName string) (apiSummary *entity.APISummary, err error) {
+	req := struct {
+		GroupId string
+		ApiName string
+	}{
+		GroupId: groupId,
+		ApiName: apiName,
 	}
-	var deployResp deployApiGateWayResp
-	err = client.commonCli.Invoke("DeployApi", deployReq, &deployResp)
+	data, err := client.get("DescribeApis", req)
+	if err != nil {
+		return
+	}
+	res := struct {
+		RequestId  string
+		TotalCount int
+		PageSize   int
+		PageNumber int
+		ApiSummarys struct {
+			APISummary []entity.APISummary
+		}
+	}{}
+
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return
+	}
+	for _, api := range res.ApiSummarys.APISummary {
+		if api.GroupId == groupId && api.ApiName == apiName {
+			apiSummary = &api
+			break
+		}
+	}
+	return
+}
+
+func (client *ApiGatewayClient) CreateAPIGateway(api entity.APIGateway) error {
+	result, err := client.get("CreateApi", api)
+	fmt.Printf("%s", result)
 	if err != nil {
 		return err
 	}

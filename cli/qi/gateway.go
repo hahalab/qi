@@ -9,19 +9,19 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/hahalab/qi/aliyun"
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 	"github.com/hahalab/qi/gateway"
 )
 
 func gatewayInit(c *cli.Context) {
-	conf := conf.GetGWConf()
+	conf := config.GetGWConf()
 
 	err := validator.New().Struct(conf)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	aliClient, err := aliyun.NewClient(&conf.Config)
+	aliClient, err := aliyun.NewClient(&conf.AliyunConfig)
 	if err != nil {
 		logrus.Fatal(err)
 	}

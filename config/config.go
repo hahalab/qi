@@ -1,4 +1,4 @@
-package conf
+package config
 
 import (
 	"encoding/json"
@@ -9,18 +9,17 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/sakeven/go-env"
 	"github.com/sirupsen/logrus"
-	"github.com/hahalab/qi/aliyun"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	cfg   = GwConf{}
-	upCfg = UpConf{}
+	cfg    = GwConf{}
+	config = Config{}
 )
 
 type CommonConf struct {
-	aliyun.Config     `json:"ali" env:"ALI" validate:"required,dive"`
+	AliyunConfig      `json:"ali" env:"ALI" validate:"required,dive"`
 	Debug      bool   `json:"debug" env:"DEBUG"`
 	RouterPath string `json:"router_path" env:"ROUTER_PATH,router.conf" validate:"required"`
 }
@@ -31,7 +30,7 @@ type GwConf struct {
 	Port string `json:"port" env:"PORT,8080"`
 }
 
-type UpConf struct {
+type Config struct {
 	CommonConf `validate:"required,dive"`
 
 	CodePath string `validate:"required"`
@@ -39,10 +38,12 @@ type UpConf struct {
 }
 
 type CodeConfig struct {
-	Name    string `yaml:"name"`
-	Command string `yaml:"command"`
-	Build   string `yaml:"build"`
-	Files   string `yaml:"files"`
+	Name       string   `yaml:"name" json:"name"`
+	Command    string   `yaml:"command" json:"command"`
+	Build      string   `yaml:"build" json:"build"`
+	Files      []string `yaml:"files" json:"files"`
+	MemorySize int      `yaml:"memorysize" json:"memorysize"`
+	Timeout    int      `yaml:"timeout" json:"timeout"`
 }
 
 func (c CodeConfig) String() string {
@@ -92,9 +93,25 @@ func MustParseGWConfig(ctx *cli.Context) error {
 	return validator.New().Struct(cfg)
 }
 
-func MustParseUpConfig(ctx *cli.Context) error {
-	upCfg.CodePath = ctx.String(FlagCodePath)
-	err := env.Decode(&(upCfg.CommonConf))
+func LoadQiConfig(path string, qiConfig *Config) (err error) {
+	file, err := ioutil.ReadFile(path)
+	if err == nil {
+		err = json.Unmarshal(file, qiConfig)
+	}
+	return
+}
+
+func LoadCodeConfig(path string, codeConfig *CodeConfig) (err error) {
+	file, err := ioutil.ReadFile(path)
+	if err == nil {
+		err = yaml.Unmarshal(file, codeConfig)
+	}
+	return
+}
+
+func MustParseConfig(ctx *cli.Context) error {
+	config.CodePath = ctx.String(FlagCodePath)
+	err := env.Decode(&(config.CommonConf))
 	if err != nil {
 		return err
 	}
@@ -104,35 +121,27 @@ func MustParseUpConfig(ctx *cli.Context) error {
 		logrus.Fatal(err)
 	}
 
-	file, err := ioutil.ReadFile(usr.HomeDir + "/.ha.conf")
-	if err == nil && len(file) != 0 {
-		err = json.Unmarshal(file, &upCfg)
-		if err != nil {
-			return err
-		}
-	}
-
-	file, err = ioutil.ReadFile(upCfg.CodePath + "/ha.yml")
+	err = LoadQiConfig(usr.HomeDir+"/.ha.conf", &config)
 	if err != nil {
 		return err
 	}
 
-	err = yaml.Unmarshal(file, &(upCfg.CodeConfig))
+	err = LoadCodeConfig(config.CodePath+"/qi.yml", &(config.CodeConfig))
 	if err != nil {
 		return err
 	}
 
-	if upCfg.Debug {
+	if config.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	return validator.New().Struct(upCfg)
+	return validator.New().Struct(config)
 }
 
 func GetGWConf() GwConf {
 	return cfg
 }
 
-func GetUPConf() UpConf {
-	return upCfg
+func GetConfig() Config {
+	return config
 }

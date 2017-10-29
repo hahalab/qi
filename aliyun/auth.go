@@ -47,7 +47,7 @@ type headerSorter struct {
 
 // 生成签名方法（直接设置请求的Header）。
 func (client *Client) signHeader(req *http.Request, canonicalizedResource string) {
-	// Get the final Authorization' string
+	// get the final Authorization' string
 	authorizationStr := "FC " + client.config.AccessKeyID + ":" + client.getSignedStr(req, canonicalizedResource)
 
 	// Give the parameter "Authorization" value
@@ -68,7 +68,7 @@ func (client *Client) getSignedStr(req *http.Request, canonicalizedResource stri
 	// Sort the temp by the Ascending Order
 	hs.Sort()
 
-	// Get the CanonicalizedOSSHeaders
+	// get the CanonicalizedOSSHeaders
 	canonicalizedOSSHeaders := ""
 	for i := range hs.Keys {
 		canonicalizedOSSHeaders += hs.Keys[i] + ":" + hs.Vals[i] + "\n"

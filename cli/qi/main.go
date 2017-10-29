@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/hahalab/qi/conf"
+	"github.com/hahalab/qi/config"
 )
 
 func main() {
@@ -20,26 +20,26 @@ func main() {
 		return nil
 	}
 	app.Action = qi
-	app.Flags = conf.BuildFlags
+	app.Flags = config.BuildFlags
 	app.Commands = []cli.Command{
 		{
 			Name:     "build",
 			Usage:    "only build code to zip package",
-			Flags:    conf.BuildFlags,
+			Flags:    config.BuildFlags,
 			Action:   onlyBuild,
 			Category: "BUILD",
 		}, {
 			Name:     "deploy",
 			Usage:    "only create/update function",
-			Flags:    conf.BuildFlags,
-			Before:   conf.MustParseUpConfig,
+			Flags:    config.BuildFlags,
+			Before:   config.MustParseConfig,
 			Action:   onlyDeploy,
 			Category: "BUILD",
 		}, {
 			Name:     "gateway",
 			Usage:    "start gateway",
-			Flags:    conf.GatewayFlags,
-			Before:   conf.MustParseGWConfig,
+			Flags:    config.GatewayFlags,
+			Before:   config.MustParseGWConfig,
 			Action:   gatewayInit,
 			Category: "GATEWAY",
 		},
