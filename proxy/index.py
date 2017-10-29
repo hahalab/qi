@@ -7,6 +7,7 @@ import socket
 import subprocess
 import time
 import urlparse
+import base64
 
 
 def handler(event, context):
@@ -29,39 +30,41 @@ def handler(event, context):
 
     event["headers"] = headers
 
-    method = event["method"]
-    data = event.get("data", None)
+    method = event["httpMethod"]
+    data = event.get("body", None)
+    if data and event["isBase64Encoded"]:
+        data = base64.b64decode(data)
     path = event.get("path", "/")
+    params = event.get("queryParameters", None)
 
     wait_for_listen(port)
-    response = send_request(port=port, headers=headers, method=method, data=data, path=path)
-    headers = dict(response.headers)
-    for k, v in headers.items():
-        headers[k] = v.split(';')
-    data = list(bytearray(response.content))
-    result = dict(headers=headers, data=data, code=response.status_code)
-    print "result :", result
+    response = send_request(port=port, headers=headers, method=method, data=data, path=path, params=params)
+
+    data = response.content
+    if data:
+        data = base64.b64encode(data)
+
     p.send_signal(subprocess.signal.SIGTERM)
     while p.poll() is None:
         time.sleep(0.1)
-    # logger.info(p.stdout)
-    # logger.error(p.stderr)
-    return result
+
+    response = {
+        "isBase64Encoded": bool(data),
+        "statusCode": response.status_code,
+        "headers": dict(response.headers),
+        "body": data
+    }
+    return response
 
 
 def wait_for_listen(port):
     while not is_listen(port):
-        time.sleep(0.1)
+        time.sleep(0.02)
 
 
 def read_config():
-    with open('qi.yml', 'r') as f:
-        config = dict()
-        for l in f.readlines():
-            key, v = l.split(':')
-            config[key] = v.strip()
-        print "read config :", config
-        return config
+    with open('qi.json', 'r') as f:
+        return json.loads(f.read())
 
 
 def start_command(cmd, port):
@@ -90,8 +93,8 @@ def is_listen(port):
     return True
 
 
-def send_request(port, headers, method, data, path):
+def send_request(port, headers, method, data, path, params):
     target = "http://127.0.0.1:{}".format(port)
     url = urlparse.urljoin(target, path)
     print "request url: {}".format(url)
-    return getattr(requests, method.lower())(url, headers=headers, data=data)
+    return getattr(requests, method.lower())(url, headers=headers, data=data, params=params)

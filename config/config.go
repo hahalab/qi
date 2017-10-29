@@ -38,12 +38,12 @@ type Config struct {
 }
 
 type CodeConfig struct {
-	Name       string `yaml:"name"`
-	Command    string `yaml:"command"`
-	Build      string `yaml:"build"`
-	Files      string `yaml:"files"`
-	MemorySize int    `yaml:"memorysize"`
-	Timeout    int    `yaml:"timeout"`
+	Name       string   `yaml:"name" json:"name"`
+	Command    string   `yaml:"command" json:"command"`
+	Build      string   `yaml:"build" json:"build"`
+	Files      []string `yaml:"files" json:"files"`
+	MemorySize int      `yaml:"memorysize" json:"memorysize"`
+	Timeout    int      `yaml:"timeout" json:"timeout"`
 }
 
 func (c CodeConfig) String() string {

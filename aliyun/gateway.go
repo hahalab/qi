@@ -152,18 +152,20 @@ func (client *ApiGatewayClient) GetAPIGateway(groupId string, apiName string) (a
 		return
 	}
 	res := struct {
-		RequestId   string
-		TotalCount  int
-		PageSize    int
-		PageNumber  int
-		ApiSummarys []entity.APISummary
+		RequestId  string
+		TotalCount int
+		PageSize   int
+		PageNumber int
+		ApiSummarys struct {
+			APISummary []entity.APISummary
+		}
 	}{}
 
 	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return
 	}
-	for _, api := range res.ApiSummarys {
+	for _, api := range res.ApiSummarys.APISummary {
 		if api.GroupId == groupId && api.ApiName == apiName {
 			apiSummary = &api
 			break
